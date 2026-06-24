@@ -1,6 +1,7 @@
 name = "task_worker_a"
 description = "Implements one complex or security-sensitive Tier A task from tasks/ with high reasoning."
-model = "cx/gpt-5.4-high"
+# model = "cx/gpt-5.4-high"
+model = "cx/gpt-5.5-medium"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 nickname_candidates = ["Aster", "Delta", "Orion"]

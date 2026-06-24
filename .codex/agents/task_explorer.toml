@@ -1,6 +1,7 @@
 name = "task_explorer"
 description = "Analyzes task prerequisites, context, affected modules, and risks without editing the repository."
-model = "cx/gpt-5.4-mini"
+# model = "cx/gpt-5.4-mini"
+model = "cx/gpt-5.5-low"
 model_reasoning_effort = "medium"
 sandbox_mode = "read-only"
 nickname_candidates = ["Compass", "Lantern", "Radar"]
