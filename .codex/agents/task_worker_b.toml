@@ -1,6 +1,6 @@
 name = "task_worker_b"
 description = "Implements one well-scoped Tier B task from tasks/ with focused verification."
-model = "gpt-5.4-mini"
+model = "cx/gpt-5.4-mini"
 model_reasoning_effort = "medium"
 sandbox_mode = "workspace-write"
 nickname_candidates = ["Birch", "Cedar", "Maple"]

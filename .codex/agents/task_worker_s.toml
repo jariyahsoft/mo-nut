@@ -1,6 +1,6 @@
 name = "task_worker_s"
 description = "Implements one critical Tier S task where mistakes may affect health-data safety or cause irreversible loss."
-model = "gpt-5.5"
+model = "cx/gpt-5.5-high"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 nickname_candidates = ["Sentinel", "Summit", "Vector"]

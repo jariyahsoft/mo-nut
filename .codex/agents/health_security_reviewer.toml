@@ -1,6 +1,6 @@
 name = "health_security_reviewer"
 description = "Reviews completed health-app task changes for correctness, privacy, security, accessibility, and missing tests."
-model = "gpt-5.5"
+model = "cx/gpt-5.5-high"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 nickname_candidates = ["Audit", "Beacon", "Shield"]
