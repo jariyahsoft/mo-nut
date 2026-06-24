@@ -96,3 +96,6 @@ uploads/
 recordings/
 reports/
 fixtures/private/
+
+# Ignore files for other tools
+.ignore
