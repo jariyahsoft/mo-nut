@@ -1,3 +1,19 @@
+# Dependencies
+node_modules/
+vendor/
+.pnpm-store/
+.yarn/cache/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+.output/
+coverage/
+*.tsbuildinfo
+
 # Environment and secrets
 .env
 .env.*
@@ -7,105 +23,76 @@
 *.p12
 *.jks
 *.keystore
-secrets/
+service-account*.json
+firebase-adminsdk-*.json
 
-# Node / TypeScript
-node_modules/
-.pnpm-store/
-dist/
-build/
-out/
-coverage/
-*.tsbuildinfo
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
 
-# Flutter / Dart
-.dart_tool/
-.packages
-.pub-cache/
-.pub/
-build/
-.flutter-plugins
-.flutter-plugins-dependencies
-.metadata
-**/doc/api/
-**/ios/Flutter/.last_build_id
-
-# Android
-**/android/.gradle/
-**/android/local.properties
-**/android/key.properties
-**/android/app/debug/
-**/android/app/profile/
-**/android/app/release/
-*.apk
-*.aab
-
-# iOS / macOS
-**/ios/Pods/
-**/ios/.symlinks/
-**/ios/Flutter/ephemeral/
-**/ios/Flutter/Generated.xcconfig
-**/ios/Flutter/flutter_export_environment.sh
-**/macos/Pods/
-**/DerivedData/
-*.xcworkspace/xcuserdata/
-*.xcodeproj/xcuserdata/
-
-# Firebase
-.firebase/
-firebase-debug.log
-firestore-debug.log
-ui-debug.log
-functions-debug.log
-.emulator-data/
-
-# Generated API clients
-**/generated/
-!packages/api-contract/generated/.gitkeep
-
-# Terraform / infrastructure
-.terraform/
-*.tfstate
-*.tfstate.*
-.terraform.lock.hcl
-crash.log
-override.tf
-override.tf.json
-*_override.tf
-*_override.tf.json
-
-# Local databases and files
-*.sqlite
-*.sqlite3
-*.db
-uploads/
-tmp/
-temp/
-
-# IDE / OS
+# OS / editor
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.example.json
-*.iml
 
-# Test output
-playwright-report/
-test-results/
-allure-results/
-
-# Misc caches
+# Cache
 .cache/
 .turbo/
 .parcel-cache/
+.eslintcache
+.nyc_output/
 
-# Agents
-.agents
+# Firebase
+.firebase/
+.firebaserc.local
+firebase-export-*/
 
-# Ignore files
-.ignore
+# Flutter / Dart (Phase 2 option)
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+.flutter-plugins
+.flutter-plugins-dependencies
+**/ios/Flutter/.last_build_id
+**/ios/Pods/
+**/android/.gradle/
+**/android/local.properties
+
+# React Native / mobile artifacts (Phase 2 option)
+**/android/app/build/
+**/android/build/
+**/ios/build/
+**/ios/DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# Test artifacts
+playwright-report/
+test-results/
+cypress/screenshots/
+cypress/videos/
+allure-results/
+
+# Infrastructure local state
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# Local generated / uploaded health data
+# Never commit test files containing real PII/PHI
+tmp/
+temp/
+.local-data/
+uploads/
+recordings/
+reports/
+fixtures/private/

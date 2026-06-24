@@ -1,223 +1,180 @@
-# 07 — Security Rules
+# 07 — Security and Privacy Rules
 
-**Source:** `mo-nut-SRS-mobile-first-PWA.md` Sections 10–12, 18–20 และ 25–27
+> **Source:** `mo-nut-SRS-two-phase.md` เวอร์ชัน 1.0, วันที่ 24 มิถุนายน 2026. เอกสารนี้ต้องอ่านร่วมกับไฟล์อื่นใน `docs/design/`
 
-## Security Objectives
+## 1. Security objectives
 
-- Confidentiality: ผู้ที่ไม่ได้รับสิทธิ์ต้องไม่เห็นข้อมูลสุขภาพ
-- Integrity: ประวัติยา นัด ค่าสุขภาพ และ audit ต้องไม่ถูกแก้โดยมิชอบ
-- Availability: นัด ยา และ SOS พื้นฐานยังใช้งานได้ในสภาวะเครือข่ายจำกัด
-- Accountability: การเข้าถึงและแก้ไขข้อมูลสำคัญตรวจสอบย้อนหลังได้
+- Prevent cross-patient data access and privilege escalation
+- Preserve medication, appointment and consent integrity
+- Minimize PII/PHI exposure in client, logs, notification and third parties
+- Make high-risk actions attributable and auditable
+- Support revocation, deletion, incident response and recovery
 
-## Threat Model Summary
+## 2. Threat model summary
 
-| Threat | Example | Primary Controls |
+| Threat | Example | Required controls |
 |---|---|---|
-| IDOR/Broken access | เปลี่ยน patientId ใน URL | resource-level authorization |
-| Account takeover | OTP abuse/token theft | rate limit, MFA, revoke, device/session records |
-| Excess privilege | caregiver อ่าน transcript โดยไม่มี scope | relationship + permission + consent |
-| Public file exposure | Storage URL ถาวร | private bucket, short signed URL |
-| Data leakage in logs | raw transcript in error | logging policy/redaction |
-| Malicious upload | disguised executable | MIME/size scan, malware scanning |
-| Share-link guessing | brute force public URL | high-entropy token, hash, expiry, rate limit |
-| AI/provider exposure | ส่ง PHI เกินจำเป็น | minimization, provider contract, consent |
-| Firebase misconfiguration | client reads collections | deny-by-default rules + API-only architecture |
-| XSS/Service Worker compromise | script อ่าน token หรือ Offline PHI | CSP, Trusted Types/encoding, dependency control, scoped/versioned worker |
-| Shared-device offline leakage | ผู้ใช้ถัดไปเห็น cache เดิม | per-account isolation, minimize storage, clear on logout/account switch |
-| CSRF/clickjacking | mutation หรือหน้าข้อมูลถูกฝัง/เรียกข้าม origin | SameSite/CSRF control ตาม auth model, origin validation, frame restrictions |
+| IDOR | caregiver changes patient ID in URL | server resource authorization and scoped query |
+| Token/session theft | lost phone or leaked token | short-lived token, secure storage, device revoke |
+| Consent bypass | stale share link after revoke | token hash, expiry, revoke check, no cache |
+| OCR/STT corruption | wrong medication/date | draft state, confidence, human confirmation |
+| Offline replay | repeated dose/measurement | idempotency key, baseVersion, operation log |
+| Admin abuse | broad support access | purpose/ticket, least privilege, immutable audit |
+| File leakage | public document URL | signed URL, malware/type validation, no public cache |
+| Notification privacy | diagnosis on lock screen | minimal template and privacy setting |
+| Provider leakage | PHI retained by AI vendor | DPA/region/retention review, minimization |
 
-## Data Classification
+## 3. Authentication model
 
-| Class | Examples | Controls |
-|---|---|---|
-| Public | marketing content | integrity protection |
-| Internal | feature flags, non-sensitive metrics | authenticated staff |
-| Confidential | email, phone, account metadata | encryption, least privilege |
-| Restricted Health | medications, measurements, transcripts, documents | strongest access/audit/minimization |
-| Security Secret | keys, tokens, credentials | Secret Manager only |
+- Phone OTP, email, Google and Apple as specified
+- Rate limit OTP/login and prevent account enumeration
+- MFA for admin/high-risk/organization accounts according to policy
+- Biometric in Phase 2 unlocks local credential only
+- Account recovery uses risk-based identity verification
+- New device, failed login and revocation create security events
 
-## Authentication
+## 4. Role matrix
 
-- Firebase Authentication
-- Email/password และ Google เป็น MVP MUST; Phone OTP เป็น SHOULD เมื่อเปิด Provider
-- MFA สำหรับ Doctor Lite, Organization Admin, System Admin และบัญชีสิทธิ์สูง
-- Native biometric login อยู่นอก MVP; sensitive web action ใช้ provider re-authentication/step-up
-- Rate limit OTP/login และตรวจ abuse signals
-- Revoke tokens เมื่อ account suspended/deleted หรือ security incident
+| Capability | Patient | Caregiver | Clinician | Org Staff | Admin | Support |
+|---|---:|---:|---:|---:|---:|---:|
+| Own profile/data | CRUD | No | No | No | No | No |
+| Delegated patient read | N/A | Scoped consent | Scoped consent | Org policy + consent | Exceptional | Ticket + minimum |
+| Medication/appointment edit | Own | Explicit scope | Approved clinician action | Role policy | No routine edit | No routine edit |
+| Consent grant/revoke | Owner/representative | No | No | No | No | Assist workflow only |
+| Audit/system admin | Own access history | Own actions | Own actions | Org subset | Platform scope | Ticket subset |
+| Content publish | No | No | Reviewer if assigned | Assigned | Role-based | No |
 
-## Authorization Evaluation
+## 5. Resource access policy
 
-ทุก protected resource ต้องตรวจ:
+Authorization decision requires all applicable checks:
 
 ```text
 authenticated
-AND active account
+AND account/device/session active
 AND role allows action
-AND (
-  resource owner
-  OR active caregiver relationship with scope
-  OR organization member with granted clinical scope
-  OR audited privileged support/admin workflow
-)
-AND consent valid
-AND permission not expired
+AND resource belongs to active patient/context
+AND consent/purpose/scope is active and unexpired
+AND organization constraint is satisfied
+AND resource status permits action
+AND high-risk re-authentication completed when required
 ```
 
-## Role Matrix Summary
+UI visibility is never an authorization control.
 
-| Resource | Patient | Caregiver | Doctor | Org Admin | System Admin |
-|---|---|---|---|---|---|
-| Own profile | RW | scoped R/W | consent R | no default | break-glass only |
-| Appointment | RW | scoped R/W | consent R/W | metadata only | break-glass |
-| Medication | RW | scoped R/W | consent R/W | no default | break-glass |
-| Measurements | RW | scoped R/W | consent R | no default | break-glass |
-| Transcript | RW | explicit scope | explicit consent | no | break-glass |
-| Audit log | own summary | no | own actions | organization scope | full audited scope |
+## 6. Permission naming
 
-`break-glass` ต้องมีเหตุผล, elevated approval/step-up auth, limited time และ audit alert
+Use `resource.action` with optional constraints, for example:
 
-## Consent Requirements
+- `appointment.read`, `appointment.write`
+- `medication.read`, `medication.write`, `dose.respond`
+- `measurement.read`, `measurement.create`
+- `document.read`, `transcript.read`
+- `checklist.read`, `checklist.complete`
+- `report.create`, `share.create`
+- `sos.receive`
 
-Consent แยกอย่างน้อย:
+## 7. Data classification
 
-- health data storage
-- caregiver sharing
-- doctor sharing
-- OCR processing
-- audio recording and STT
-- AI processing
-- location and traffic
-- SOS data sharing
-- notifications
+| Class | Examples | Baseline |
+|---|---|---|
+| Public | approved health articles | integrity/review required |
+| Internal | feature config, non-sensitive ops metrics | authenticated staff |
+| Confidential PII | name, phone, DOB, facility/HN | encryption, minimum access |
+| Restricted PHI | medication, measurement, documents, transcript | strict consent, audit, no public cache |
+| Secret | token, OTP secret, provider key | secret manager only |
 
-Consent record มี version, purpose, scope, grantedAt, withdrawnAt และ evidence channel
+## 8. PDPA/privacy requirements
 
-## Firebase Security Posture
+- Document purpose, lawful basis/consent and policy version
+- Data minimization and purpose limitation
+- Access/export/correction/deletion workflow and SLA
+- Consent withdrawal must be as usable as grant
+- Retention and legal hold documented by category
+- Third-party processor region/retention/security reviewed
+- Privacy notice and store disclosure must match actual collection
+- Do not claim HIPAA/GDPR/SOC2 compliance unless formally assessed; design should remain compatible where applicable
 
-แนวทางหลักคือ client ไม่อ่าน/เขียน restricted collections โดยตรง
+## 9. Firebase/adapter rule pseudocode
 
-Firestore rules baseline:
+Critical writes should pass API rather than direct client rules. Defense-in-depth rules:
 
 ```text
-match /{document=**} {
-  allow read, write: if false;
-}
+allow read: if authenticated
+            && resource.patientId in authorizedPatientIds(request.auth)
+            && hasActiveScope(request.auth, resource, "read");
+
+allow write: if false; // critical collections are server-only by default
 ```
 
-อนุญาตเฉพาะ public/config/cache collection ที่ผ่าน review ตัวอย่าง pseudocode:
+Server service account access is constrained by IAM; application authorization still executes before repository calls.
 
-```text
-match /public_content/{id} {
-  allow read: if true;
-  allow write: if false;
-}
+## 10. Secrets and key management
 
-match /user_device_preferences/{id} {
-  allow read, write: if request.auth != null
-    && resource.data.userId == request.auth.uid;
-}
-```
+- Secret Manager per environment
+- Rotation owner and interval for provider keys
+- No secret in mobile/PWA bundle except explicitly public client configuration
+- Service account uses workload identity where available
+- Signed URL keys and share tokens are rotated/revocable
 
-Domain user ID ไม่เท่ากับ Firebase UID จึงไม่ควรใช้ direct rules กับ health resources โดยไม่มีกลไก mapping ที่ปลอดภัย
+## 11. Audit requirements
 
-## Storage Rules
+Audit at minimum:
 
-- Bucket private
-- Client upload ผ่าน authorized upload request
-- Path ใช้ internal IDs ไม่มีชื่อ/โรคใน filename
-- Download ผ่าน short-lived signed URL หรือ authenticated proxy
-- Validate MIME, magic bytes, size, checksum และ malware scan
+- authentication/security events and device revocation
+- consent grant/suspend/revoke/expiry
+- caregiver/clinician/admin/support access
+- appointment and medication/schedule/dose correction
+- report/export/share-link creation and access
+- OCR/STT draft confirmation/application
+- SOS initiation/close and location share status
+- account deletion/data request/legal hold
 
-## PWA and Browser Security
+Audit record must be append-only through normal application channels.
 
-- Production ต้องใช้ HTTPS, HSTS, CSP, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` และ frame protection ที่เหมาะสม
-- ป้องกัน XSS ด้วย framework escaping, output encoding และห้าม render untrusted HTML โดยไม่มี sanitizer
-- ประเมิน CSRF ตาม Firebase bearer-token/session model; mutation ต้องตรวจ origin/authorization และใช้ SameSite token/cookie controls เมื่อเกี่ยวข้อง
-- Service Worker scope ต้องแคบ, asset/version ตรวจสอบได้ และ update/rollback ได้; ห้าม cache authenticated response แบบกว้าง
-- IndexedDB/Cache Storage เก็บ PHI เท่าที่ policy อนุญาต แยก account/patient และล้างเมื่อ logout/account switch
-- Emergency Profile Offline เป็น opt-in, minimized และอธิบายความเสี่ยง shared device
-- Push payload ใช้ข้อความทั่วไปเป็นค่าเริ่มต้น; subscription ที่หมดอายุ/ผิดพลาดต้อง revoke
-- Camera, Microphone, Geolocation และ Notification ขอสิทธิ์เมื่อมี user intent และต้องมี fallback เมื่อถูกปฏิเสธ
+## 12. Abuse and rate controls
 
-## Secret Management
+- OTP/login attempts per account/device/IP risk
+- invite/share-link/report/OCR/STT quotas
+- SOS abuse detection without blocking direct emergency call
+- notification resend and SMS cost limits
+- file upload size/type/count and malware scan
 
-- Production secrets อยู่ Secret Manager
-- Key แยก environment
-- Least-privilege service accounts
-- Rotation policy และ owner ชัดเจน
-- ห้าม expose server key ใน Web bundle; Firebase public config ไม่ถือเป็น authorization และต้องใช้ App Check/rules/API controls
+## 13. Notification privacy
 
-## Encryption
+- Lock-screen text defaults to minimal information
+- User chooses privacy level where practical
+- No full medication/diagnosis/document content in notification payload
+- Payload should contain reference IDs and fetch authorized details after open
 
-- TLS 1.2+
-- Provider-managed encryption at rest
-- พิจารณา application/field-level encryption สำหรับ transcript, sensitive identifiers หรือ regulatory need
-- Backup encrypted และ access logged
+## 14. Local data security
 
-## Audit Events
+### PWA
 
-อย่างน้อยต้องบันทึก:
+- Limit IndexedDB/cache to approved data
+- Do not cache share/report pages by default
+- Clear local PHI/token on logout and revoke sync
 
-- login success/failure
-- patient record view by non-owner
-- permission/consent change
-- document/audio download
-- medication or appointment change
-- report generation/share/access/revoke
-- SOS create/update/resolve
-- admin/support privileged access
-- account export/delete
+### Mobile
 
-Audit log append-only และ client ห้ามเขียน
+- OS secure storage for tokens
+- Encrypted local database for PHI
+- Screenshot/background preview protection considered for sensitive screens
+- Remote device/session revoke triggers local wipe on next connectivity
 
-## Abuse and Rate Limits
+## 15. Security test checklist
 
-| Action | Control |
-|---|---|
-| OTP | per phone/device/IP cooldown |
-| OCR/STT/AI | per user/plan/day quota |
-| Upload | size/type/rate/concurrent limits |
-| Share links | creation and public access limits |
-| SOS | prevent accidental duplicate, but do not block genuine emergency call |
-| Reports | queue and per-user concurrency |
+- [ ] IDOR for every patient-scoped endpoint
+- [ ] role/scope/expiry/revoke negative cases
+- [ ] session fixation/replay/revocation
+- [ ] OTP enumeration/rate limit
+- [ ] file MIME/extension/malware/signed URL
+- [ ] idempotency replay and payload mismatch
+- [ ] sync conflict and stale base version
+- [ ] share token entropy, expiry and revoke
+- [ ] logs/analytics/notification PHI leakage
+- [ ] dependency/secret/SAST/DAST scanning
+- [ ] admin/support purpose and audit enforcement
 
-## Privacy by Design Checklist
+## 16. Incident response minimum
 
-- [ ] เก็บข้อมูลขั้นต่ำ
-- [ ] Default share = off
-- [ ] Permission granular และ revoke ง่าย
-- [ ] Lock-screen notification ซ่อนข้อมูลได้
-- [ ] ผู้ใช้ export/delete account ได้
-- [ ] Provider processing มี consent และ retention
-- [ ] Location เก็บเท่าที่จำเป็น
-- [ ] Analytics ไม่มี raw PHI
-
-## Security Testing Checklist
-
-- [ ] IDOR across all patient-scoped endpoints
-- [ ] revoked caregiver token/session behavior
-- [ ] privilege escalation
-- [ ] upload bypass and malware
-- [ ] public share brute force
-- [ ] Firebase rules deny tests
-- [ ] secret scanning
-- [ ] dependency/SAST scans
-- [ ] API fuzzing for validation
-- [ ] log redaction verification
-- [ ] backup access review
-- [ ] XSS, CSP, CSRF, clickjacking และ security-header tests
-- [ ] Service Worker cache poisoning/update และ Offline PHI leakage tests
-- [ ] Logout/account-switch cache and IndexedDB clearing tests
-
-## Compliance Notes
-
-- PDPA เป็น baseline สำหรับประเทศไทย
-- HIPAA/GDPR ยังไม่ควรอ้าง compliance จนกว่าจะมี legal/security assessment และ contractual controls
-- การบันทึกเสียงต้องมี consent UX และข้อความตามข้อกฎหมายพื้นที่ให้บริการ
-
-## Open Questions
-
-- Data residency requirement
-- Retention/deletion schedule ที่ฝ่ายกฎหมายอนุมัติ
-- Break-glass workflow สำหรับ support/admin
-- ต้องใช้ field-level encryption ตั้งแต่ MVP หรือ Pilot
+Detect → contain → revoke → preserve evidence → assess affected data/users → notify according to policy/law → recover → post-incident actions. Operational runbook remains a required follow-up document.

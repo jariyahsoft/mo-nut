@@ -1,369 +1,210 @@
 # 04 — API Standard
 
-**Source:** `mo-nut-SRS-mobile-first-PWA.md` Sections 3.4, 9–12 และ 21
+> **Source:** `mo-nut-SRS-two-phase.md` เวอร์ชัน 1.0, วันที่ 24 มิถุนายน 2026. เอกสารนี้ต้องอ่านร่วมกับไฟล์อื่นใน `docs/design/`
 
-## Principles
+## 1. Principles
 
-- REST + JSON over HTTPS
-- OpenAPI 3.1 เป็น source of truth
-- Versioned base path `/api/v1`
-- Firebase ID token สำหรับ authentication
-- Permission/consent ตรวจบน server ทุก request
-- DTO ไม่เปิดเผย Firestore-specific types
-- List endpoints ใช้ cursor pagination
-- Mutation สำคัญรองรับ idempotency และ optimistic concurrency
+- HTTPS JSON API, contract-first and versioned
+- Server-authoritative authentication, consent, permission and state transition
+- Canonical JSON types independent of Firebase
+- Idempotent commands and optimistic concurrency
+- Consistent error envelope and correlation ID
+- Cursor pagination and explicit filtering/sorting
+- Async jobs return status resources rather than block long requests
 
-## Base URLs
+## 2. Base URL and versioning
 
 ```text
-Local:       http://localhost:8080/api/v1
-Development: https://api-dev.example.com/api/v1
-Staging:     https://api-staging.example.com/api/v1
-Production:  https://api.example.com/api/v1
+https://<environment-host>/api/v1
 ```
 
-## Headers
+Breaking changes require a new major version or compatibility layer. Mobile support/deprecation policy must be defined before Phase 2.
 
-```http
-Authorization: Bearer <firebase-id-token>
-Content-Type: application/json
-Accept-Language: th-TH
-X-Request-Id: optional-client-generated-id
-Idempotency-Key: required-for-selected-mutations
-If-Match: "<version>"
-```
+## 3. Required headers
 
-## Success Envelope
+| Header | Use |
+|---|---|
+| `Authorization: Bearer <token>` | authenticated requests |
+| `X-Correlation-Id` | end-to-end tracing |
+| `Idempotency-Key` | retryable create/command operations |
+| `If-Match` or `baseVersion` | optimistic concurrency |
+| `X-Client-Platform` | web/android/ios |
+| `X-App-Version` | compatibility/observability |
+| `Accept-Language` | localized response/message key |
+
+## 4. Authentication and authorization
+
+1. Identity token is validated and exchanged for application claims/session
+2. Request resolves active role, organization and patient context
+3. Policy evaluates role + resource owner + consent + scope + constraints
+4. Resource query itself is scoped; authorization is not only post-filtering
+5. High-risk actions may require re-authentication
+
+## 5. Request conventions
+
+- JSON uses camelCase
+- Timestamps use RFC 3339 UTC; local schedule also includes IANA time zone
+- IDs are UUID/ULID strings
+- Unknown fields are rejected or ignored according to endpoint schema; behavior must be documented
+- File upload uses signed upload workflow and metadata API
+
+## 6. Success response
 
 ```json
 {
   "data": {},
   "meta": {
-    "request_id": "req_01J...",
-    "schema_version": 1,
-    "next_cursor": null
-  }
-}
-```
-
-## Error Envelope
-
-```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "ข้อมูลไม่ถูกต้อง",
-    "fields": [
-      {"field": "scheduled_start_at", "code": "REQUIRED"}
-    ],
-    "details": {},
-    "retryable": false
+    "correlationId": "req_01J...",
+    "serverTime": "2026-06-24T10:00:00Z",
+    "nextCursor": null
   },
-  "meta": {"request_id": "req_01J..."}
+  "error": null
 }
 ```
 
-## HTTP and Error Mapping
-
-| HTTP | Stable Code | Meaning |
-|---:|---|---|
-| 400 | VALIDATION_ERROR | รูปแบบข้อมูลไม่ถูกต้อง |
-| 401 | UNAUTHENTICATED | token ไม่มี/หมดอายุ |
-| 403 | FORBIDDEN | ไม่มีสิทธิ์หรือ consent |
-| 404 | RESOURCE_NOT_FOUND | ไม่พบ resource |
-| 409 | CONFLICT / VERSION_CONFLICT / IDEMPOTENCY_CONFLICT | resource, version หรือ idempotency conflict |
-| 422 | BUSINESS_RULE_VIOLATION | ขัด business rule |
-| 429 | RATE_LIMITED | เกิน quota/rate |
-| 500 | INTERNAL_ERROR | server error |
-| 503 | PROVIDER_UNAVAILABLE | provider/worker unavailable |
-
-## IDs and Time
-
-- ID เป็น UUIDv7 หรือ ULID string
-- Timestamp เป็น UTC ISO 8601
-- Date-only เป็น `YYYY-MM-DD`
-- Schedule ต้องส่ง `timezone` แยก
-- ห้ามส่ง provider timestamp object
-
-## Pagination
-
-Request:
-
-```http
-GET /patients/{id}/appointments?limit=20&cursor=opaque&status=UPCOMING&sort=scheduled_start_at
-```
-
-Response meta:
+## 7. Error response
 
 ```json
 {
-  "next_cursor": "opaque-or-null",
-  "has_more": true
-}
-```
-
-Cursor ต้อง opaque และไม่ expose raw Firestore cursor
-
-## Filtering and Sorting
-
-- Allowlist fields เท่านั้น
-- Default sort ต้อง deterministic และมี ID tie-breaker
-- Reject unknown filter เพื่อป้องกัน accidental expensive query
-
-## Idempotency
-
-Required for:
-
-- create appointment
-- confirm medication event
-- create SOS event
-- initiate report
-- create upload metadata
-
-Server เก็บ result ตาม key + user + endpoint ตาม configurable TTL
-
-## Optimistic Concurrency
-
-Update request ส่ง `If-Match` หรือ `version`:
-
-```json
-{
-  "version": 3,
-  "status": "CONFIRMED"
-}
-```
-
-หาก mismatch คืน `409 VERSION_CONFLICT` พร้อม latest version metadata
-
-## Authentication and Authorization Checks
-
-ทุก protected endpoint:
-
-1. Verify Firebase token
-2. Resolve domain user
-3. Check account status
-4. Check coarse role
-5. Check ownership/relationship/organization
-6. Check permission scope
-7. Check consent and expiry
-8. Audit privileged reads/writes
-
-## Upload Flow
-
-1. `POST /uploads/initiate`
-2. Server ตรวจ permission/MIME/size และคืน signed upload configuration
-3. Client upload ไป Storage
-4. `POST /uploads/{uploadId}/complete` ยืนยัน metadata/checksum
-5. Processing endpoint สร้าง async job
-
-## Async Job Response
-
-```json
-{
-  "data": {
-    "job_id": "job_01J...",
-    "status": "QUEUED",
-    "status_url": "/api/v1/ai-jobs/job_01J..."
+  "data": null,
+  "meta": {"correlationId": "req_01J..."},
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "message": "ข้อมูลบางรายการไม่ถูกต้อง",
+    "fields": [{"path": "scheduledAt", "code": "REQUIRED"}]
   }
 }
 ```
 
-## Core Endpoint Catalog
+Minimum codes: `AUTH_REQUIRED`, `FORBIDDEN_SCOPE`, `RESOURCE_NOT_FOUND`, `VALIDATION_FAILED`, `VERSION_CONFLICT`, `IDEMPOTENCY_CONFLICT`, `RATE_LIMITED`, `DEPENDENCY_UNAVAILABLE`, `PROCESSING_PENDING`.
 
-### Identity and Patients
+## 8. Pagination/filtering/sorting
 
-```text
-GET    /me
-POST   /sessions/revoke-all
-GET    /consent-documents/current
-POST   /consents
-POST   /consents/{consentId}/withdraw
-POST   /patients
-GET    /patients/{patientId}
-PATCH  /patients/{patientId}
-GET    /patients/{patientId}/conditions
-POST   /patients/{patientId}/conditions
-GET    /patients/{patientId}/allergies
-POST   /patients/{patientId}/allergies
-GET    /patients/{patientId}/emergency-contacts
-POST   /patients/{patientId}/emergency-contacts
-```
+- Cursor pagination only for growing collections
+- `limit` is capped server-side
+- Filters are allow-listed and map to approved indexes
+- Sorting has stable tie-breaker (`id` or timestamp+id)
+- Responses expose `nextCursor`, not database-native cursor
 
-### Caregivers and Consent
+Example:
 
 ```text
-POST   /patients/{patientId}/caregiver-invitations
-GET    /patients/{patientId}/caregivers
-PATCH  /patients/{patientId}/caregivers/{relationshipId}
-DELETE /patients/{patientId}/caregivers/{relationshipId}
-POST   /caregiver-invitations/{token}/accept
-GET    /caregiver/patients
+GET /patients/{id}/measurements?type=bloodPressure&from=...&to=...&limit=50&cursor=...
 ```
 
-### Appointments
+## 9. Idempotency
 
-```text
-GET    /patients/{patientId}/appointments
-POST   /patients/{patientId}/appointments
-GET    /appointments/{appointmentId}
-PATCH  /appointments/{appointmentId}
-POST   /appointments/{appointmentId}/status-transitions
-POST   /appointments/{appointmentId}/reminders
-POST   /appointments/{appointmentId}/documents
-```
+- Required for create appointment, dose response, measurement append, SOS, report/share creation and sync operations where retry can duplicate effects
+- Server stores key + normalized payload hash + result for retention window
+- Same key/same payload returns original result
+- Same key/different payload returns `IDEMPOTENCY_CONFLICT`
 
-### Upload, OCR and STT
+## 10. Concurrency
 
-```text
-POST   /uploads/initiate
-POST   /uploads/{uploadId}/complete
-POST   /patients/{patientId}/ocr-jobs
-POST   /patients/{patientId}/recordings
-POST   /recordings/{recordingId}/transcription-jobs
-GET    /ai-jobs/{jobId}
-POST   /ai-jobs/{jobId}/review
-```
+- Mutable entities expose integer `version`
+- Client sends `If-Match` or `baseVersion`
+- Conflict response returns safe server snapshot and resolution metadata
+- Consent/permission changes are online and server authoritative
 
-### Medications
+## 11. Endpoint catalog
 
-```text
-GET    /patients/{patientId}/medications
-POST   /patients/{patientId}/medications
-GET    /medications/{medicationId}
-PATCH  /medications/{medicationId}
-POST   /medications/{medicationId}/schedules
-```
+| Endpoint | Purpose |
+|---|---|
+| `POST /auth/session/exchange` | แลก Identity Token เป็น Application Session/Claims |
+| `GET/PATCH /me` | ข้อมูลบัญชีและ Preference |
+| `GET/POST/PATCH /patients` | โปรไฟล์ผู้ป่วยตามสิทธิ์ |
+| `GET/POST /patients/{id}/caregivers` | จัดการผู้ดูแลและคำเชิญ |
+| `GET/POST /patients/{id}/consents` | จัดการ Consent/Permission |
+| `GET/POST/PATCH /patients/{id}/appointments` | นัดหมาย |
+| `POST /appointments/{id}/transition` | เปลี่ยนสถานะตาม State Machine |
+| `GET/POST/PATCH /patients/{id}/medications` | รายการยา |
+| `GET/POST/PATCH /medications/{id}/schedules` | ตารางยา |
+| `GET/PATCH /patients/{id}/doses` | Dose Occurrence และการตอบ |
+| `GET/POST /patients/{id}/measurements` | ข้อมูลสุขภาพ |
+| `POST /patients/{id}/assets` | ขอ Signed Upload/สร้าง Metadata |
+| `POST /assets/{id}/ocr-jobs` | เริ่ม OCR |
+| `POST /assets/{id}/transcription-jobs` | เริ่ม STT |
+| `POST /processing-drafts/{id}/confirm` | ยืนยันผล AI/OCR/STT |
+| `GET/POST /patients/{id}/checklists` | Checklist |
+| `GET/POST /patients/{id}/questions` | คำถามแพทย์ |
+| `GET/PATCH /notification-preferences` | Preference แจ้งเตือน |
+| `POST /patients/{id}/sos` | เริ่ม SOS |
+| `POST /sos/{id}/close` | ปิดเหตุการณ์ SOS |
+| `POST /patients/{id}/reports` | สร้างรายงาน |
+| `POST /patients/{id}/share-links` | สร้างลิงก์แชร์ |
+| `DELETE /share-links/{id}` | เพิกถอนลิงก์ |
+| `POST /sync/batch` | ส่งชุดคำสั่ง Offline |
+| `GET /sync/changes` | รับ Delta/Change Feed ตาม Cursor |
 
-### Medication Events
+## 12. Module endpoint expectations
 
-```text
-GET    /patients/{patientId}/dose-events
-POST   /dose-events/{doseEventId}/actions
-POST   /dose-events/{doseEventId}/corrections
-```
+### Appointment
 
-### Health
+- Transition uses dedicated command endpoint and validates state machine
+- Reschedule creates revision/history and notification changes
+- OCR never mutates appointment until draft confirmation
 
-```text
-GET    /patients/{patientId}/measurements
-POST   /patients/{patientId}/measurements
-PATCH  /measurements/{measurementId}
-DELETE /measurements/{measurementId}
-GET    /patients/{patientId}/measurement-summary
-```
+### Medication/Dose
 
-### Checklists and Questions
+- Schedule changes use effective date/version
+- Dose response is idempotent and records actor/respondedAt/reason
+- Past dose correction requires reason and audit
 
-```text
-GET    /patients/{patientId}/checklists
-POST   /patients/{patientId}/checklists
-PATCH  /checklists/{checklistId}
-POST   /checklists/{checklistId}/logs
-GET    /patients/{patientId}/questions
-POST   /patients/{patientId}/questions
-PATCH  /questions/{questionId}
-```
+### Consent/Sharing
 
-### Maps and SOS
+- Grant records policy version, purpose, scopes and validity
+- Revoke invalidates related link/session according to SLA
+- Share page must not expose resource existence beyond scope
 
-```text
-GET    /appointments/{appointmentId}/travel-plan
-POST   /patients/{patientId}/sos-events
-PATCH  /sos-events/{sosEventId}
-GET    /patients/{patientId}/emergency-profile
-```
+### Processing jobs
 
-### Reports
+- Create returns `202 Accepted` with job resource
+- Polling or event channel returns status
+- Provider metadata/model version stored; PHI-minimized diagnostics only
 
-```text
-POST   /patients/{patientId}/reports
-GET    /reports/{reportId}
-POST   /reports/{reportId}/share-links
-DELETE /share-links/{shareLinkId}
-GET    /shared/{token}
-```
+## 13. Webhook/event format
 
-### Notification, PWA and Offline Sync
-
-```text
-POST   /push-subscriptions
-DELETE /push-subscriptions/{id}
-GET    /notifications
-POST   /notifications/{id}/read
-POST   /sync/batch
-```
-
-`POST /sync/batch` รับ `device_id` และรายการ mutation ที่มี `client_mutation_id`, `entity_type`, `operation`, `base_version`, `payload`; response ต้องคืนผลรายรายการเพื่อไม่ให้ mutation ที่ผิดทำให้ทั้ง batch ล้มเหลว
+External webhooks are not yet required. Internal domain events should use:
 
 ```json
 {
-  "device_id": "dev_01J...",
-  "mutations": [
-    {
-      "client_mutation_id": "019...",
-      "entity_type": "health_measurement",
-      "operation": "create",
-      "base_version": null,
-      "payload": {}
-    }
-  ]
+  "eventId": "01J...",
+  "eventType": "appointment.rescheduled.v1",
+  "occurredAt": "2026-06-24T10:00:00Z",
+  "actor": {"type": "user", "id": "..."},
+  "subject": {"type": "appointment", "id": "..."},
+  "correlationId": "req_...",
+  "data": {}
 }
 ```
 
-```json
-{
-  "results": [
-    {
-      "client_mutation_id": "019...",
-      "status": "applied",
-      "server_id": "019...",
-      "server_version": 1
-    }
-  ]
-}
-```
+No secret or unnecessary PHI in event headers/log transport.
 
-## Event Format
+## 14. Notification template contract
 
-```json
-{
-  "event_id": "evt_01J...",
-  "event_type": "MEDICATION_EVENT_MISSED",
-  "event_version": 1,
-  "occurred_at": "2026-06-24T08:00:00Z",
-  "aggregate_type": "MEDICATION_EVENT",
-  "aggregate_id": "mev_01J...",
-  "patient_id": "pat_01J...",
-  "payload": {}
-}
-```
+A notification request must use approved template key, locale, minimal data references, channel preference, recipient scope and disclosure class. Lock-screen text must minimize PHI.
 
-Payload ต้องมีเฉพาะข้อมูลที่ worker ต้องใช้ ไม่คัดลอก PHI เกินจำเป็น
+## 15. Rate limiting
 
-## Notification Payload
+Apply stricter limits to login/OTP, invitation, share-link, SOS abuse paths, report export, OCR/STT and notification resend. Limits should combine user/device/IP risk without blocking legitimate caregivers.
 
-Push payload ไม่ควรใส่ข้อมูลสุขภาพละเอียดบน lock screen
+## 16. API security checklist
 
-```json
-{
-  "type": "MEDICATION_DUE",
-  "resource_id": "mev_01J...",
-  "deep_link": "/medications/dose-events/mev_01J...",
-  "privacy_mode": "HIDDEN"
-}
-```
+- [ ] Auth token issuer/audience/expiry validated
+- [ ] Resource authorization uses patient/resource ID
+- [ ] Consent scope checked server-side
+- [ ] Input schema and file policy validated
+- [ ] Idempotency/version enforced where needed
+- [ ] Response contains no hidden fields/other patient data
+- [ ] Rate limit and abuse monitoring enabled
+- [ ] Correlation/audit event generated
+- [ ] OpenAPI examples contain synthetic data only
 
-Deep link ต้องเป็น HTTPS/relative web route ภายใน PWA; ห้ามใช้ native custom URL scheme ใน MVP
+## 17. Contract development workflow
 
-## API Security Checklist
-
-- [ ] HTTPS only
-- [ ] Token verification
-- [ ] Resource-level authorization
-- [ ] Input validation and allowlists
-- [ ] Rate limiting
-- [ ] Idempotency for high-risk mutations
-- [ ] Audit logging
-- [ ] No PHI in URL query where avoidable
-- [ ] Signed URL short expiry
-- [ ] OpenAPI contract tests
+1. Propose OpenAPI/JSON Schema change
+2. Review with PWA/Mobile/Backend/QA/Security
+3. Publish mock server and generated client
+4. Implement producer and consumer tests
+5. Run backward-compatibility check in CI
+6. Deprecate only under published support policy

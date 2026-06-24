@@ -1,189 +1,164 @@
-# Mo-nut (หมอนัด)
+# หมอนัด — Mo-nut
 
-> Cross-platform health companion สำหรับผู้ป่วยโรคเรื้อรัง ผู้ดูแล และบุคลากรทางการแพทย์ เพื่อช่วยไม่ให้พลาดนัด พลาดยา และพลาดคำแนะนำสำคัญ
+ผู้ช่วยดูแลสุขภาพสำหรับผู้ป่วยโรคเรื้อรัง ผู้ดูแล และบุคลากรทางการแพทย์ พัฒนาเป็น 2 เฟส: **Mobile-first PWA** และ **Cross-platform Mobile App** โดยใช้ Backend/API และข้อมูลชุดเดียวกัน
 
-**Source:** SRS Mo-nut v1.0 และ PRD Mo-nut ที่ได้รับการยืนยันในโครงการ
+> **Source of truth:** `mo-nut-SRS-two-phase.md` Version 1.0 (2026-06-24)
 
 ## Overview
 
-Mo-nut ช่วยจัดการวงจรการดูแลผู้ป่วยตั้งแต่ก่อนพบแพทย์ ระหว่างพบแพทย์ หลังกลับบ้าน และการติดตามต่อเนื่อง ได้แก่ นัดหมาย ยา ค่าสุขภาพ เช็กลิสต์ คำถามสำหรับแพทย์ บันทึกเสียง การเดินทาง และ SOS
+Mo-nut ช่วยลดการพลาดนัด พลาดยา และการสูญหายของข้อมูลสุขภาพ ด้วยระบบนัดหมาย ตารางยา ข้อมูลสุขภาพ OCR/STT เช็กลิสต์ ผู้ดูแล รายงาน การแชร์แบบมี Consent และ SOS โดยระบบไม่วินิจฉัยโรค ไม่สั่งยา และไม่ใช้แทนบริการฉุกเฉิน
 
-## Target Users
+## Delivery phases
+
+| Phase | Client | เป้าหมาย |
+|---|---|---|
+| Phase 1 | Mobile-first PWA + Responsive Web | พิสูจน์ Core Journey และ Product–Market Fit |
+| Phase 2 | Android/iOS Cross-platform App + PWA เดิม | เพิ่ม Native Notification, Offline-first, Biometric, Secure Storage และ Device Integration |
+
+## Target users
 
 - ผู้ป่วยโรคเรื้อรังและผู้สูงอายุ
 - ผู้ดูแลหรือสมาชิกครอบครัว
-- แพทย์และบุคลากรทางการแพทย์
-- ผู้ดูแลสถานพยาบาลและผู้ดูแลระบบ
+- แพทย์และบุคลากรทางการแพทย์ในโหมด Doctor Lite
+- เจ้าหน้าที่องค์กร ผู้ดูแลระบบ และ Support ที่ได้รับสิทธิ์
 
-## Core Features
+## Core modules
 
-- Appointment และ OCR ใบนัด
-- Medication schedule, reminder และ adherence
-- Health measurements และกราฟ
-- Caregiver sharing และ permission scopes
-- Audio recording, Speech-to-Text และ AI-assisted summary
-- Doctor recommendation checklist
-- Questions for doctor
-- Map, travel-time estimate และ navigation
-- SOS และ Emergency Profile
-- PDF report และ expiring share link
-- Offline-first สำหรับ workflow สำคัญ
+Identity & Access, Patient Profile, Appointment, Medication, Health Record, Caregiver & Consent, Document/OCR, Audio/STT, Checklist & Questions, Notification, Map & Travel, SOS, Report & Share, Clinician Access, Dashboard, Offline Sync, CMS, Audit และ Administration
 
-## Proposed Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Mobile/Web client | Flutter + Dart |
-| State management | Riverpod หรือ Bloc — ตัดสินใจใน ADR ก่อน implement |
-| Local database | Drift/SQLite |
-| Backend API | NestJS + TypeScript |
-| API contract | OpenAPI 3.1 |
-| Authentication | Firebase Authentication |
-| Primary database | Cloud Firestore |
-| File storage | Firebase/Google Cloud Storage |
-| Notifications | FCM + Local Notifications |
-| Backend runtime | Cloud Run หรือ Firebase Functions Gen 2 |
-| Monitoring | Cloud Logging/Monitoring + Crashlytics |
-| CI/CD | GitHub Actions |
-
-## Architecture Summary
-
-- API-first และ Contract-first
-- Frontend ไม่เข้าถึงข้อมูลสุขภาพหลักใน Firestore โดยตรง
-- Business logic อยู่ใน Domain/Application layer
-- Database access ผ่าน Repository interfaces
-- Firestore เป็น Infrastructure adapter ที่เปลี่ยนเป็น PostgreSQL หรือ MongoDB ได้
-- ใช้ UUIDv7 หรือ ULID เป็น Domain ID
-- ใช้ top-level collections และ string foreign IDs
-- ใช้ Outbox pattern สำหรับงาน notification และ background processing
-
-อ่านรายละเอียดที่ [01-architecture.md](01-architecture.md)
-
-## Repository Structure
+## Architecture summary
 
 ```text
-mo-nut/
-├── apps/
-│   ├── mobile/
-│   ├── doctor-portal/
-│   ├── admin-portal/
-│   └── backend/
-├── packages/
-│   ├── api-contract/
-│   ├── design-system/
-│   ├── test-fixtures/
-│   └── shared-utils/
-├── infrastructure/
-│   ├── firebase/
-│   ├── scripts/
-│   └── monitoring/
-└── docs/
+PWA / Web Portal / Android-iOS App
+              |
+       Versioned HTTPS API
+              |
+ Application Services + Domain Policies
+              |
+ Repository / Integration Ports
+       |            |             |
+ Firebase Adapter  OCR/STT       Push/Map/Email/SMS
 ```
 
-## Getting Started
+Client ต้องพึ่งพา API Contract ไม่พึ่ง Firestore document shape โดยตรง กฎสิทธิ์ Consent การยืนยันยา การเปลี่ยนสถานะ และ Audit ต้องบังคับใช้ฝั่ง Server
 
-> Repo scaffold ยังไม่ถูกสร้างจริง ขั้นตอนด้านล่างเป็น baseline ที่ task แรกต้องทำให้ใช้งานได้
+## Technology status
 
-### Prerequisites
+| Area | Current direction | Status |
+|---|---|---|
+| PWA | TypeScript framework ที่รองรับ PWA/Accessibility/Responsive | Framework TBD |
+| Mobile | Flutter หรือ React Native | TBD ก่อน Phase 2 |
+| Identity | Firebase Authentication หรือ OIDC-compatible IdP | Reference architecture |
+| API/Compute | Cloud Functions/Cloud Run หรือเทียบเท่า | Service-by-service decision |
+| Primary store | Cloud Firestore ผ่าน Repository Adapter | Initial infrastructure |
+| Object files | Firebase Storage/Object Storage | Initial infrastructure |
+| Contract | OpenAPI 3.1 + JSON Schema + generated client | Required |
+| Messaging | FCM/Web Push + fallback adapter | Required by capability |
 
-- Flutter stable
-- Dart SDK ที่มากับ Flutter
-- Node.js LTS
-- pnpm
-- Firebase CLI
-- Java/Android SDK สำหรับ Android
-- Xcode สำหรับ iOS บน macOS
+## Proposed repository structure
 
-### Local Services
+```text
+apps/
+  pwa/                  # Phase 1 client
+  mobile/               # Phase 2 client
+services/
+  api/                  # API/BFF and application services
+  workers/              # OCR/STT, notification, report jobs
+packages/
+  contracts/            # OpenAPI, JSON Schema, shared enums
+  domain/               # Framework-independent rules and state machines
+  ui/                   # Shared tokens/components where feasible
+  test-fixtures/        # Synthetic data only
+infra/
+  firebase/
+  deployment/
+docs/design/            # Initial project files 00–12
+```
+
+> โครงสร้างนี้เป็น **Assumption สำหรับการเริ่มต้น** และต้องยืนยันใน ADR ก่อนสร้าง production code
+
+## Getting started
+
+1. อ่าน [Project overview](docs/design/00-project-overview.md) และ [Architecture](docs/design/01-architecture.md)
+2. ปิด Open Decisions ใน [Decision log](docs/design/05-decisions.md)
+3. เลือก PWA framework และกำหนด package manager
+4. สร้าง `.env.example` จากรายการ Environment Variables ด้านล่าง โดยห้ามใส่ค่าจริง
+5. เริ่ม Sprint 0 ตาม [Task plan](docs/design/11-tasks.md)
+6. เผยแพร่ OpenAPI/JSON Schema และ Mock Server ก่อนเริ่ม UI module แรก
+
+## Environment variables
+
+ชื่อจริงอาจเปลี่ยนหลังเลือก stack แต่ต้องใช้หลักการต่อไปนี้:
+
+```dotenv
+APP_ENV=development
+PUBLIC_APP_NAME=Mo-nut
+PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
+FIREBASE_PROJECT_ID=replace-with-dev-project
+FIREBASE_STORAGE_BUCKET=replace-with-dev-bucket
+OIDC_AUDIENCE=replace-with-audience
+OCR_PROVIDER=disabled
+STT_PROVIDER=disabled
+MAP_PROVIDER=disabled
+NOTIFICATION_PROVIDER=emulator
+LOG_LEVEL=info
+```
+
+ห้ามเก็บ API key, service-account JSON, private key, production token หรือ PHI ใน repository
+
+## Common commands
+
+คำสั่งมาตรฐานที่ทุก implementation ต้อง expose หลังเลือก stack:
 
 ```bash
-firebase emulators:start
-pnpm --dir apps/backend dev
-flutter run --dart-define=APP_ENV=local
+<package-manager> install
+<package-manager> lint
+<package-manager> typecheck
+<package-manager> test
+<package-manager> test:contract
+<package-manager> test:e2e
+<package-manager> build
+<package-manager> dev
 ```
 
-### Common Commands
+ชื่อ `<package-manager>` เป็น Open Decision; ห้ามเริ่ม CI จริงจนกว่าจะเลือกและบันทึกใน ADR
 
-```bash
-# Backend
-pnpm --dir apps/backend lint
-pnpm --dir apps/backend test
-pnpm --dir apps/backend build
+## Development workflow
 
-# Flutter
-flutter analyze
-flutter test
-flutter run
-
-# Contract
-pnpm api:validate
-pnpm api:mock
-pnpm api:generate
-```
-
-## Environment Variables
-
-สร้าง `.env.example` โดยห้ามใส่ secret จริง
-
-```env
-APP_ENV=local
-API_BASE_URL=http://localhost:8080/api/v1
-FIREBASE_PROJECT_ID=demo-mo-nut
-FIREBASE_STORAGE_BUCKET=demo-mo-nut.appspot.com
-GOOGLE_MAPS_API_KEY=
-OCR_PROVIDER=mock
-STT_PROVIDER=mock
-AI_SUMMARY_PROVIDER=disabled
-```
-
-Secrets ฝั่ง server ต้องเก็บใน Secret Manager ไม่เก็บใน source code
-
-## Development Workflow
-
-1. สร้างหรือแก้ User Story ใน [06-backlog.md](06-backlog.md)
-2. อนุมัติ API contract ก่อนเริ่ม integration
-3. Frontend ใช้ generated client และ mock server
-4. Backend implement ตาม contract และผ่าน contract test
-5. QA ใช้ test fixtures ชุดเดียวกัน
-6. Merge เมื่อผ่าน Definition of Done ใน [02-coding-rules.md](02-coding-rules.md)
-
-## Documentation
-
-- [00-project-overview.md](00-project-overview.md)
-- [01-architecture.md](01-architecture.md)
-- [02-coding-rules.md](02-coding-rules.md)
-- [03-database-design.md](03-database-design.md)
-- [04-api-standard.md](04-api-standard.md)
-- [05-decisions.md](05-decisions.md)
-- [06-backlog.md](06-backlog.md)
-- [07-security-rules.md](07-security-rules.md)
-- [08-ui-guide.md](08-ui-guide.md)
-- [09-testing-guide.md](09-testing-guide.md)
-- [10-glossary.md](10-glossary.md)
-- [11-tasks.md](11-tasks.md)
-- [12-ui-image-prompts.md](12-ui-image-prompts.md)
+- Contract-first: OpenAPI/JSON Schema ก่อน implementation
+- Frontend/Mobile พัฒนาด้วย Mock Server และ generated client
+- Backend ใช้ Repository/Provider adapters
+- Pull request ต้องผ่าน lint, typecheck, unit, contract, secret scan และ dependency scan
+- Schema change ใช้ Expand–Migrate–Contract และ backward compatibility
+- Feature เสี่ยงสูงต้องอยู่หลัง Feature Flag
 
 ## Testing
 
-ใช้ Unit, Integration, Contract, E2E, Security และ Accessibility tests ตาม [09-testing-guide.md](09-testing-guide.md)
+ดู [Testing guide](docs/design/09-testing-guide.md) โดย Core Journey ต้องครอบคลุม Auth, Appointment/OCR, Medication Dose, Caregiver Consent, Health Measurement, Doctor Visit Mode, SOS, Report/Share และ Offline Sync
 
 ## Deployment
 
-Environment ต้องแยก Local, Development, Staging และ Production โดยใช้ Firebase project แยกกัน Production deployment ต้องมี approval และ rollback plan
+- แยก Local, Development, Staging/UAT และ Production
+- PWA ใช้ controlled service-worker rollout และ cache compatibility
+- Mobile ใช้ Internal Test → Closed Beta/TestFlight → Staged Rollout
+- Production ต้องมี manual approval, migration check และ rollback plan
+
+## Documentation
+
+- [00 Project overview](docs/design/00-project-overview.md)
+- [01 Architecture](docs/design/01-architecture.md)
+- [02 Coding rules](docs/design/02-coding-rules.md)
+- [03 Database design](docs/design/03-database-design.md)
+- [04 API standard](docs/design/04-api-standard.md)
+- [05 Decisions](docs/design/05-decisions.md)
+- [06 Backlog](docs/design/06-backlog.md)
+- [07 Security rules](docs/design/07-security-rules.md)
+- [08 UI guide](docs/design/08-ui-guide.md)
+- [09 Testing guide](docs/design/09-testing-guide.md)
+- [10 Glossary](docs/design/10-glossary.md)
+- [11 Tasks](docs/design/11-tasks.md)
+- [12 UI image prompts](docs/design/12-ui-image-prompts.md)
 
 ## License
 
-TBD — ต้องยืนยันก่อนเปิด repository สู่สาธารณะ
-
-## Assumptions
-
-- Flutter เป็น client framework หลักตาม SRS
-- Backend ใช้ TypeScript/NestJS
-- ภาษา UI เริ่มต้นเป็นภาษาไทย
-
-## Open Questions
-
-- เลือก Riverpod หรือ Bloc
-- เลือก Cloud Run หรือ Functions Gen 2 เป็น runtime หลัก
-- ขอบเขต Doctor Lite Portal ใน MVP
-- OCR/STT provider สำหรับ Production
+TBD โดยเจ้าของโครงการก่อนเผยแพร่ repository ภายนอกองค์กร

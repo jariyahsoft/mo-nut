@@ -1,176 +1,152 @@
 # 02 — Coding Rules
 
-**Source:** `mo-nut-SRS-mobile-first-PWA.md` Sections 3, 9–16, 19–22
+> **Source:** `mo-nut-SRS-two-phase.md` เวอร์ชัน 1.0, วันที่ 24 มิถุนายน 2026. เอกสารนี้ต้องอ่านร่วมกับไฟล์อื่นใน `docs/design/`
 
-## General Principles
+## 1. Scope
 
-- โค้ดต้องอ่านง่าย ทดสอบได้ และไม่ผูก domain กับ provider
-- ห้าม bypass API contract หรือ authorization เพื่อความเร็วชั่วคราว
-- ห้ามเก็บ secret, token หรือข้อมูลผู้ป่วยจริงใน repo/test fixtures
-- ทุก assumption ที่มีผลต่อ requirement ต้องบันทึกใน ADR หรือ Open Questions
+กติกานี้ใช้กับ PWA, API, workers, shared contracts และ Mobile App แม้ framework สุดท้ายยังเป็น Open Decision
 
-## TypeScript/NestJS Rules
+## 2. Language and framework conventions
 
-- เปิด `strict` mode
-- ห้ามใช้ `any` ยกเว้น adapter boundary ที่มีเหตุผลและ validate ทันที
-- ใช้ immutable domain input เท่าที่ทำได้
-- Controllers บาง: validate/map/call use case/map response
-- Business logic อยู่ใน Domain/Application ไม่อยู่ใน controller/repository
-- Repository interface อยู่ฝั่ง domain/application; implementation อยู่ infrastructure
-- External provider ทุกชนิดต้องมี interface และ timeout/retry policy
+- TypeScript code uses strict mode; no implicit `any`
+- Mobile code must enable the framework's strict/static analysis mode
+- Domain rules must not import UI, Firebase SDK or provider SDK
+- Public contract types are generated from OpenAPI/JSON Schema where possible
+- Framework-specific code stays in `apps/*` or `adapters/*`
+- Date/time manipulation uses audited library and explicit time zone
 
-### Naming
+## 3. Folder and dependency rules
 
-| Type | Convention | Example |
+```text
+UI -> generated client -> API transport -> application -> domain -> ports
+                                                adapters -> external services
+```
+
+- Inner layers must not depend on outer layers
+- No direct Firestore access from UI
+- No provider response object may cross into domain/public API without mapping
+- Shared package exports must be explicit; avoid deep imports
+- Circular dependencies are build failures
+
+## 4. Naming conventions
+
+| Item | Rule | Example |
 |---|---|---|
-| Class | PascalCase | `CreateAppointmentUseCase` |
-| Method/variable | camelCase | `patientId` |
-| Constant | UPPER_SNAKE_CASE | `MAX_UPLOAD_BYTES` |
-| File | kebab-case | `create-appointment.use-case.ts` |
-| API JSON field | snake_case ตาม SRS/OpenAPI | `scheduled_start_at` |
-| DB collection | snake_case plural | `medication_events` |
+| Entity/type | PascalCase | `DoseOccurrence` |
+| Function/variable | camelCase | `confirmDose()` |
+| Constant/enum value | UPPER_SNAKE_CASE or contract convention | `VERSION_CONFLICT` |
+| API path | plural kebab-case nouns | `/patients/{id}/share-links` |
+| Database field | camelCase canonical name | `measuredAt` |
+| Event | past-tense domain event | `appointment.rescheduled.v1` |
+| Permission | resource.action | `medication.read` |
+| Test | behavior statement | `rejects caregiver without scope` |
 
-## React/Next.js PWA Rules
+## 5. Type safety
 
-- เปิด TypeScript `strict`; หลีกเลี่ยง Client Component เมื่อ Server Component หรือ static output เพียงพอ
-- Component แสดงผลและ dispatch intent; ห้ามเรียก Firebase/Firestore หรือ `fetch` แบบ ad hoc จาก component
-- ใช้ generated OpenAPI client และ runtime validation ที่ trust boundary
-- ใช้ Semantic HTML ก่อน ARIA และต้องรองรับ keyboard, visible focus, screen reader และ zoom/font scaling
-- ทุก data screen ต้องมี loading, empty, retryable error, offline, permission denied และ expired/revoked state ตามบริบท
-- Text ทั้งหมดมาจาก localization resources; ภาษาเริ่มต้น `th-TH`
-- Business date/time ใช้ UTC ใน model และแปลง locale/timezone ที่ presentation
-- Browser API ทุกตัวต้องทำ capability detection และมี fallback โดยไม่พึ่ง user-agent detection
-- Service Worker ห้าม cache response ที่มี PHI โดยอัตโนมัติ และต้องมี version/update/rollback strategy
-- IndexedDB record ต้องผูก account/patient context, มี schema version และ clear-on-logout policy
+- Use branded/opaque types for IDs where language supports it
+- Avoid raw string for status, role, scope, units and event names
+- Unknown enum values must fail safely or map to `unknown`
+- Money/cost uses integer minor units; health values specify unit explicitly
+- Do not derive age as persisted source of truth; calculate from birth date
+- All timestamps are UTC plus display/schedule time zone where relevant
 
-## Folder and Module Boundaries
+## 6. Validation
 
-- ห้าม import infrastructure จาก domain
-- Feature หนึ่งห้ามอ่าน local table ของ feature อื่นโดยตรง
-- Shared utility ต้อง generic จริง ไม่เป็นที่ทิ้ง business logic
-- Circular dependency ถือเป็น build failure
+- Client validation is UX only; server validation is authoritative
+- Validate request schema, permission, current version, state transition and domain constraints
+- Health range validation prevents malformed values but must not diagnose
+- File upload validates MIME, extension, size, checksum and malware policy
+- OCR/STT fields remain proposed until confirmation
 
-## Type Safety and Validation
+## 7. Error handling
 
-- Validate input ทั้ง client และ server; server เป็น authority
-- ใช้ enum จาก contract ไม่ใช้ free-form string สำหรับ status
-- Numeric health values ต้องมี unit และ range sanity validation
-- ห้ามใช้ floating timestamp หรือ local time ที่ไม่มี timezone ใน API
-- Parse external provider output เป็น typed internal result ก่อนใช้งาน
+- Throw/return typed domain and application errors
+- Map errors to standard API codes, never leak stack/secret/provider details
+- Use retry only for transient/idempotent operations
+- External calls require timeout; critical calls require circuit-breaker/fallback strategy
+- UI must distinguish validation, permission, offline, conflict and dependency failure
 
-## Error Handling
+## 8. Logging and audit
 
-- ใช้ stable error code เช่น `APPOINTMENT_NOT_FOUND`
-- ห้ามส่ง stack trace ให้ client
-- UI ต้องแสดงข้อความที่เข้าใจง่ายและ action ที่ทำต่อได้
-- Retry เฉพาะ transient error; ห้าม retry validation/permission error
-- Background job ต้องมี retry count, next attempt และ dead-letter state
+- Structured JSON logs with correlation ID
+- Never log raw token, OTP, password, private URL, full transcript, document image or unnecessary PHI
+- Audit is not ordinary debug logging; required actions create immutable `AuditEvent`
+- Log redaction must be tested
+- Support/admin access logs purpose and ticket reference
 
-## Logging
+## 9. Configuration and environment
 
-Log ได้:
+- Secrets come from Secret Manager/CI environment, never repository/client bundle
+- Environment configuration is validated at startup
+- Separate dev/staging/prod projects and credentials
+- Feature flags must have owner, default, expiry/review date and rollback behavior
+- `.env.example` contains names and safe examples only
 
-- requestId
-- internal user/resource ID
-- action code
-- duration
-- provider status/error code
+## 10. i18n and content
 
-ห้าม log:
+- Thai is initial locale; text must use message keys, not be scattered in components
+- Dates, numbers and units use locale-aware formatting
+- Medical/safety text requires approved content source and version
+- Avoid abbreviations for elderly users unless expanded
+- Error messages state next action without exposing security detail
 
-- access/refresh token, OTP
-- ชื่อเต็มหรือเบอร์โทรโดยไม่จำเป็น
-- transcript, diagnosis, medication instruction แบบเต็ม
-- raw request body ที่มี PHI
+## 11. Accessibility
 
-## Configuration and Environment
+- Touch target ≥44×44 CSS px
+- Semantic controls, labels, focus order and keyboard support
+- Screen reader announcements for async status and validation
+- Dynamic text without clipping; do not rely on color alone
+- Reduced motion supported
+- Confirmation required for destructive/high-risk actions
 
-- Config ต้อง validate ตอน startup
-- Secret ใช้ Secret Manager
-- `.env` ใช้เฉพาะ local development
-- ห้าม hard-code project ID, bucket, API base URL หรือ emergency number
-- Feature flags ต้องมี default ที่ปลอดภัย
+## 12. API boundary
 
-## API Boundary
+- Generated client is the only standard path from UI to API
+- Client may not construct database paths or infer permission
+- Commands requiring idempotency always send `Idempotency-Key`
+- Updates use version/`If-Match` where specified
+- Breaking contract needs versioning and consumer review
 
-- Frontend ใช้ generated API client
-- ห้ามสร้าง DTO ซ้ำแบบไม่จำเป็น
-- API breaking change ต้องเพิ่ม version หรือ migration window
-- ทุก mutation สำคัญรองรับ idempotency และ optimistic concurrency ตามที่ระบุ
+## 13. Security coding checklist
 
-## Database Rules
+- [ ] Server checks resource ownership/consent for every ID
+- [ ] No IDOR via nested IDs or list filters
+- [ ] Token audience/issuer/expiry validated
+- [ ] File access uses short-lived signed URL and scope
+- [ ] Rate limit login, OTP, share, report and processing endpoints
+- [ ] Output encoding and injection protections applied
+- [ ] Sensitive local data encrypted/cleared by policy
+- [ ] Dependencies and secrets scanned in CI
 
-- Domain ID ใช้ UUIDv7/ULID
-- ห้ามใช้ Firestore DocumentReference ใน domain
-- ห้าม nested subcollection ลึกโดยไม่มี ADR
-- ห้ามเก็บ array ที่เติบโตไม่จำกัด
-- Medical/audit event ใช้ append-only หรือ soft-delete ตาม policy
-- Query ใหม่ต้องระบุ index และคาดการณ์ volume
+## 14. Testability rules
 
-## Date and Time
+- Domain policies are pure/deterministic where possible
+- Clock, UUID, provider and repository are injectable
+- Every state transition has positive/negative tests
+- Contract fixtures use synthetic data only
+- Provider adapters have recorded/sandbox tests without real PHI
 
-- Database/API timestamp เป็น UTC ISO 8601
-- เก็บ timezone ของ schedule แยกต่างหาก
-- DST-safe แม้ตลาดแรกคือไทย
-- งานแจ้งเตือนต้องมี deterministic occurrence ID
+## 15. Code review checklist
 
-## i18n and Content
+- [ ] Requirement/issue and traceability cited
+- [ ] Permission and privacy impact reviewed
+- [ ] Error/offline/loading states handled
+- [ ] Unit/integration/contract tests added
+- [ ] Accessibility reviewed for UI
+- [ ] Migration/backward compatibility considered
+- [ ] Logs contain no sensitive data
+- [ ] Documentation/ADR updated where necessary
 
-- ภาษาเริ่มต้น `th-TH`
-- หลีกเลี่ยงศัพท์แพทย์ที่ผู้ใช้ทั่วไปไม่เข้าใจ
-- Error และ notification ต้องมี localization key
-- ห้าม concatenate ประโยคที่ทำให้แปลไม่ได้
+## 16. Definition of Done for code
 
-## Accessibility
+- Accepted contract and acceptance criteria implemented
+- Lint, typecheck, unit, integration and contract tests pass
+- Security/accessibility checks applicable to change pass
+- Observability and audit behavior included
+- No Critical/High unresolved defect unless formally accepted
+- Feature flag/rollback path documented for risky change
+- Thai UI copy and error states reviewed
 
-- Touch target ขั้นต่ำประมาณ 44×44 CSS px
-- รองรับ font scaling โดย layout ไม่พัง
-- ใส่ semantic label ทุก icon-only button
-- ห้ามสื่อสถานะด้วยสีอย่างเดียว
-- SOS ต้องเด่นแต่ป้องกัน accidental activation
-- Contrast และพฤติกรรมโดยรวมต้องเป้าหมาย WCAG 2.2 AA
+## 17. Stack-specific TBD
 
-## PWA and Offline Rules
-
-- Manifest ต้องมี `name`, `short_name`, icons, `theme_color`, `background_color`, `start_url`, `scope` และ `display`
-- Cache name ทุกชุดต้อง versioned; App Shell ใช้ Cache First ส่วน API/PHI ใช้ Network First ตาม policy
-- Offline mutation ทุกตัวมี `client_mutation_id`, retry metadata และ idempotency behavior ที่ตรงกับ API
-- Sync queue ห้าม discard pending item เงียบ ๆ; conflict ต้องแสดงข้อมูล local/server และทางเลือกเมื่อ merge ไม่ปลอดภัย
-- File ชั่วคราวต้องตรวจ quota, แจ้ง progress, retry/resume และล้างหลัง sync สำเร็จตาม policy
-- Logout, account switch และ permission revocation ต้อง invalidate cache/local data ตามนโยบาย
-
-## Security Coding Checklist
-
-- [ ] Authentication middleware ทำงาน
-- [ ] ตรวจ ownership/relationship/scope/consent
-- [ ] Validate body/query/path
-- [ ] Rate limit endpoint เสี่ยง
-- [ ] ป้องกัน IDOR
-- [ ] ไม่ log PHI/secret
-- [ ] File upload ตรวจ MIME, size และ authorization
-- [ ] Share token เก็บแบบ hash
-- [ ] Audit privileged access
-- [ ] Dependency scan ผ่าน
-
-## Code Review Checklist
-
-- [ ] ตรงกับ user story และ contract
-- [ ] ไม่มี duplicated business rule
-- [ ] Error code และ edge cases ครบ
-- [ ] Unit/integration tests ครบตาม risk
-- [ ] Offline behavior ถูกกำหนด
-- [ ] Accessibility states ครบ
-- [ ] Migration/index impact ถูกพิจารณา
-- [ ] Documentation/ADR อัปเดต
-
-## Definition of Done
-
-- Acceptance criteria ผ่าน
-- API spec และ generated client sync
-- Unit tests และ required integration tests ผ่าน
-- Static analysis/lint/format ผ่าน
-- Security checklist ผ่าน
-- Loading/empty/error/offline states พร้อม
-- Analytics/audit events ที่จำเป็นถูกเพิ่ม
-- ไม่มี secret หรือ real patient data
-- QA verification และ product acceptance ผ่าน
+The following must be filled after ADR acceptance: formatter/linter names, package manager, state library, test runners, mobile analyzer, code-generation commands and minimum runtime versions.

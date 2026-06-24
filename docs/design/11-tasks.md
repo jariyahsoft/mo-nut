@@ -1,200 +1,181 @@
-# 11 — Implementation Tasks
+# 11 — Implementation Task Plan
 
-**Source:** `mo-nut-SRS-mobile-first-PWA.md` v1.0 (24 มิถุนายน 2026)
-Status: `[ ] todo` `[/] in progress` `[x] done` `[!] blocked`
+> **Source:** `mo-nut-SRS-two-phase.md` เวอร์ชัน 1.0, วันที่ 24 มิถุนายน 2026. เอกสารนี้ต้องอ่านร่วมกับไฟล์อื่นใน `docs/design/`
 
-## Current Phase
+## Status legend
 
-Phase 0 — Foundation, Contracts and UX Prototype
+```text
+[ ] todo
+[/] in progress
+[x] done
+[!] blocked
+```
 
-## Workstream A — Repository Foundation
+## 1. Current phase
 
-- [ ] A01 Create monorepo folders
-- [ ] A02 Initialize TypeScript React/Next.js mobile-first PWA and environment configuration
-- [ ] A03 Initialize NestJS backend
-- [ ] A04 Configure pnpm workspace/tooling
-- [ ] A05 Add format/lint/typecheck/test/build scripts
-- [ ] A06 Create `.env.example`
-- [ ] A07 Configure GitHub Actions baseline
-- [ ] A08 Add branch/PR templates
+**Sprint 0 / Architecture Foundation for Phase 1 PWA**
 
-Dependencies: none
+## 2. Required decisions before coding
+- [!] Framework PWA และ Cross-platform Mobile App
+- [!] Firebase Functions เทียบกับ Cloud Run สำหรับแต่ละ Service
+- [!] OCR/STT Provider, Region, Data Retention และ Cost
+- [!] Map Provider และรูปแบบค่าใช้จ่าย
+- [!] ช่องทางสำรอง SMS/Email/LINE และผู้รับผิดชอบค่าใช้จ่าย
+- [!] Browser/OS Version ขั้นต่ำ
+- [!] Retention Period ของเสียง เอกสาร Audit และ Notification Log
+- [!] Threshold/ข้อความเตือนที่ต้องผ่านผู้เชี่ยวชาญทางการแพทย์
+- [!] Legal basis/Consent flow สำหรับผู้เยาว์หรือผู้แทนโดยชอบธรรม
+- [!] SLA ของการถอนสิทธิ์ Data Export และ Account Deletion
+- [!] รายการ Health/Bluetooth Device ที่อนุมัติใน Phase 2
 
-## Workstream B — API Contract
+## 3. Sprint 0 — Repository and contracts
 
-- [ ] B01 Create OpenAPI root and shared schemas
-- [ ] B02 Define auth/me/patient schemas
-- [ ] B03 Define caregiver/consent schemas
-- [ ] B04 Define appointment/OCR schemas
-- [ ] B05 Define medication/event schemas
-- [ ] B06 Define health/checklist/question schemas
-- [ ] B07 Define audio/job/report/SOS schemas
-- [ ] B08 Configure mock server
-- [ ] B09 Configure generated TypeScript web API client
-- [ ] B10 Add contract compatibility check
+- [ ] Confirm monorepo/repository layout and package manager
+- [ ] Create apps/services/packages/infra structure
+- [ ] Add lint, format, typecheck, unit, contract and build commands
+- [ ] Create `.env.example` and secret-management policy
+- [ ] Configure dev/staging/prod Firebase projects and emulators
+- [ ] Define OpenAPI 3.1 base, standard envelope and error schemas
+- [ ] Define canonical IDs, timestamps, enums and common audit fields
+- [ ] Generate typed mock client and start mock server
+- [ ] Create CI with secret/dependency scan
+- [ ] Create threat-model workshop and detailed permission matrix
+- [ ] Define synthetic fixtures; prohibit real PHI in non-production
 
-Dependencies: A04
+Verification:
+- [ ] Fresh clone can install, lint, test and build
+- [ ] Mock API supports success, validation, denied, conflict and pending
+- [ ] Environment separation and no production credential verified
 
-## Workstream C — Firebase and Cloud Foundation
+## 4. Phase 1 foundation
 
-- [ ] C01 Create separate Firebase projects for dev/staging/prod
-- [ ] C02 Configure Auth providers
-- [ ] C03 Configure Firestore indexes and deny-by-default rules
-- [ ] C04 Configure private Storage and upload policy
-- [ ] C05 Configure FCM and App Check
-- [ ] C06 Configure Emulator Suite
-- [ ] C07 Configure Secret Manager/service accounts
-- [ ] C08 Configure Cloud Logging/Monitoring budgets and alerts
-- [ ] C09 Configure Web Push VAPID/subscription lifecycle and In-app notification baseline
+### IAM and patient context
+- [ ] Implement identity token exchange/session claims
+- [ ] Phone OTP/email/Google; Apple when applicable
+- [ ] Multi-role and active patient context
+- [ ] Device/session list and revoke
+- [ ] Login/OTP rate limiting and security audit events
 
-Dependencies: A03
+### Consent and authorization
+- [ ] Implement consent/permission canonical models
+- [ ] Server authorization middleware/policy engine
+- [ ] Caregiver invite/accept/expire/revoke
+- [ ] Access history and share artifact revocation
+- [ ] Automated IDOR/policy test matrix
 
-## Workstream D — Domain and Database
+### Core domain/data
+- [ ] Repository ports and Firestore adapters
+- [ ] Appointment and event state machine
+- [ ] Medication schedule/dose generation/state machine
+- [ ] Measurement append/trend queries
+- [ ] Audit event append path
+- [ ] Firestore indexes and emulator tests
 
-- [ ] D01 Implement standard entity metadata and portable ID generator
-- [ ] D02 Implement user/patient repositories
-- [ ] D03 Implement caregiver/consent repositories
-- [ ] D04 Implement appointment repositories and indexes
-- [ ] D05 Implement medication/schedule/event repositories
-- [ ] D06 Implement health/checklist/question repositories
-- [ ] D07 Implement media/report/SOS repositories
-- [ ] D08 Implement audit and outbox repositories
-- [ ] D09 Build NDJSON export script
-- [ ] D10 Add migration dry-run framework
+## 5. Phase 1 feature modules
 
-Dependencies: B01–B07, C03
+### Appointment/OCR/Visit
+- [ ] Appointment CRUD and reschedule history
+- [ ] Quick Capture/file upload
+- [ ] OCR async jobs, confidence and review
+- [ ] Reminder offsets and Doctor Visit Mode
+- [ ] Calendar/map external opening
 
-## Workstream E — Design System and Prototype
+### Medication/notification
+- [ ] Medication/schedule editor
+- [ ] Dose occurrence generator
+- [ ] Taken/snooze/skip/issue response with idempotency
+- [ ] Missed/grace-period caregiver escalation
+- [ ] In-app notification center and web-push capability handling
 
-- [ ] E01 Confirm brand name/logo/color direction
-- [ ] E02 Implement typography, spacing, colors and components
-- [ ] E02a Implement responsive shell, safe-area, bottom navigation and standalone/browser layouts
-- [ ] E03 Build Patient Today prototype
-- [ ] E04 Build Appointment scan/OCR prototype
-- [ ] E05 Build Medication due prototype
-- [ ] E06 Build Health dashboard prototype
-- [ ] E07 Build Doctor Visit Mode prototype
-- [ ] E08 Build Caregiver dashboard prototype
-- [ ] E09 Build SOS prototype
-- [ ] E10 Conduct elderly usability test
-- [ ] E11 Revise based on client feedback
-- [ ] E12 Prototype install prompt, permission education, unsupported-capability and sync-conflict states
+### Health/checklist/audio
+- [ ] Measurement form/trends and approved threshold messages
+- [ ] Checklist/occurrence/progress
+- [ ] Doctor questions linked to appointment
+- [ ] Audio consent/recording/upload/STT review
 
-Use prompts in [12-ui-image-prompts.md](12-ui-image-prompts.md) for concept images before implementation
+### Report/share/SOS/Doctor Lite
+- [ ] Report async generation and selected scopes
+- [ ] Expiring/revocable share link
+- [ ] SOS hold/confirm, direct-call fallback and per-channel status
+- [ ] Emergency card/QR privacy settings
+- [ ] Doctor Lite consent-scoped summary
 
-## Workstream F — MVP Feature Sequence
+### Dashboard/admin/content
+- [ ] Patient and caregiver dashboards/read models
+- [ ] Clinician dashboard
+- [ ] Admin/system health/incident minimum
+- [ ] Reviewed health content workflow
 
-### Sprint 1 — Identity/Profile/Caregiver
+## 6. Offline and sync
 
-- [ ] F101 Email/password + Google Auth and domain-user bootstrap; Phone OTP behind feature flag
-- [ ] F102 Consent onboarding
-- [ ] F103 Patient profile
-- [ ] F104 Caregiver invite/accept/revoke
-- [ ] F105 Permission matrix integration tests
+- [ ] Define operation envelope and dependency ordering
+- [ ] PWA IndexedDB/outbox for approved commands
+- [ ] `/sync/batch` and `/sync/changes`
+- [ ] Dedup/idempotency and conflict response
+- [ ] Offline banner, last synced and conflict UI
+- [ ] Logout/revoke local-data clearing
 
-### Sprint 2 — Appointments/OCR
+## 7. Quality and release
 
-- [ ] F201 Appointment CRUD
-- [ ] F202 Appointment list/detail/calendar
-- [ ] F203 Secure upload
-- [ ] F204 OCR provider mock and processing jobs
-- [ ] F205 OCR review/confirm
-- [ ] F206 Appointment reminders
+- [ ] Core E2E journeys automated
+- [ ] Accessibility audit and elderly usability test
+- [ ] Security test/penetration review
+- [ ] Performance baseline and queue/load tests
+- [ ] Backup/restore and rollback drill
+- [ ] Privacy notice/consent text/notification templates reviewed
+- [ ] Phase 1 acceptance criteria signed off
+- [ ] Pilot rollout, support channel and monitoring dashboards
 
-### Sprint 3 — Medication
+## 8. Phase 2 preparation and delivery
 
-- [ ] F301 Medication CRUD and image
-- [ ] F302 Schedule engine
-- [ ] F303 Medication event generation
-- [ ] F304 In-app notification + FCM Web Push, permission/capability UX and privacy-safe payload
-- [ ] F305 Taken/snooze/skip offline sync
-- [ ] F306 Caregiver escalation
+- [ ] Validate Phase 2 entry gate
+- [ ] Select Flutter or React Native through ADR/spike
+- [ ] Define minimum Android/iOS support and store checklist
+- [ ] Implement generated API client and encrypted local database
+- [ ] Native push/local notification/background constraints
+- [ ] Biometric unlock and secure storage
+- [ ] Deep links/share/camera/microphone on real devices
+- [ ] Cross-channel sync and PWA-account migration tests
+- [ ] HealthKit/Health Connect consent/import if approved
+- [ ] Approved Bluetooth device integration if approved
+- [ ] TestFlight/closed beta/staged rollout and rollback
 
-### Sprint 4 — Health/Checklist/Questions
+## 9. Dependencies
 
-- [ ] F400 Quick Capture launcher, active-patient context, capability fallbacks and offline queue state
-- [ ] F401 Measurement entry/history/charts
-- [ ] F402 Checklist template/occurrence/progress
-- [ ] F403 Questions and answers
-- [ ] F404 Today dashboard aggregation
+| Task area | Depends on |
+|---|---|
+| UI implementation | API schema, mock, UI guide |
+| Backend module | canonical entity, permission rule, state machine |
+| OCR/STT | provider/region/retention/cost decision |
+| Notification | provider, privacy template, fallback decision |
+| Phase 2 local DB | mobile framework and encryption decision |
+| Health/Bluetooth | approved device/scope and consent/legal review |
 
-### Sprint 5 — Visit/Audio/Reports
+## 10. Definition of Done
 
-- [ ] F501 Doctor Visit Mode
-- [ ] F502 Audio recording/upload
-- [ ] F503 STT processing/review
-- [ ] F504 PDF report generation
-- [ ] F505 Share links and audit
+- Requirement and source traceability
+- Contract/schema published and compatibility tested
+- Permission/privacy/audit implemented
+- Unit/integration/contract/E2E tests pass as applicable
+- Accessibility/offline/error states implemented
+- Observability and rollback documented
+- No unresolved Critical/High issue without formal acceptance
 
-### Sprint 6 — Map/SOS/Hardening
+## 11. Deployment checklist
 
-- [ ] F601 Travel plan and navigation deep link
-- [ ] F602 Emergency profile offline
-- [ ] F603 Basic SOS and caregiver alert
-- [ ] F604 Accessibility hardening
-- [ ] F605 Security testing
-- [ ] F606 Pilot release checklist
-- [ ] F607 Admin account search/suspend/session revoke and system status
-- [ ] F608 Security Auditor log search and role-separation tests
+- [ ] Build/version/artifact signed
+- [ ] Migration backward-compatible and rehearsed
+- [ ] Feature flags/defaults reviewed
+- [ ] Secrets/permissions reviewed
+- [ ] Smoke/E2E and monitoring alerts pass
+- [ ] Rollback command/process verified
+- [ ] Support/incident owner on call
+- [ ] Release notes and privacy/store disclosures current
 
-## Cross-cutting Tasks
+## 12. Notes for AI agents
 
-- [ ] X01 IndexedDB database, per-account cache and pending operation queue
-- [ ] X02 Sync conflict policies and UI
-- [ ] X03 Notification privacy/quiet hours
-- [ ] X04 Structured logging and request tracing
-- [ ] X05 Analytics event catalog without PHI
-- [ ] X06 Backup/export/restore procedures
-- [ ] X07 Cost dashboard and quota controls
-- [ ] X08 Privacy policy/consent copy legal review
-- [ ] X09 Web App Manifest, install guidance, safe area and standalone mode
-- [ ] X10 Service Worker App Shell/offline fallback, versioned cache and update/rollback flow
-- [ ] X11 Browser capability adapter/fallbacks for camera, microphone, geolocation, share, push and `tel:`
-- [ ] X12 Storage quota, resumable upload and temporary-file cleanup
-- [ ] X13 Browser compatibility matrix and WCAG 2.2 AA automation/manual checks
-- [ ] X14 Logout/account-switch Offline Data clearing and privacy verification
-
-## Definition of Done per Task
-
-- [ ] Acceptance criteria linked
-- [ ] Contract updated and validated
-- [ ] Unit/integration tests passed
-- [ ] Security and accessibility checklist passed
-- [ ] Offline/error states handled
-- [ ] Logs/audit do not expose PHI
-- [ ] Documentation and ADR updated
-- [ ] QA verified in staging
-
-## Verification Checklist before Pilot
-
-- [ ] P0 E2E flows pass
-- [ ] No Critical/High security issue
-- [ ] Production notification configuration tested
-- [ ] Data export tested
-- [ ] Restore/rollback tested
-- [ ] Monitoring alerts tested
-- [ ] Web privacy notice, consent and PWA install/permission guidance approved
-- [ ] SOS disclaimer and emergency numbers verified
-- [ ] Pilot support process ready
-
-## Deployment Checklist
-
-- [ ] Approved release version
-- [ ] Contract compatibility confirmed
-- [ ] Migration/backfill dry run
-- [ ] Feature flags set safely
-- [ ] Secrets and service-account permissions reviewed
-- [ ] Staged deployment/feature flags enabled
-- [ ] Rollback owner identified
-- [ ] Post-deploy smoke tests
-
-## Notes for AI Agents
-
-1. อ่าน `00-project-overview.md`, `01-architecture.md`, `02-coding-rules.md` ก่อนเริ่มทุก task
-2. ห้ามสร้าง requirement ใหม่; ใส่ Assumption/Open Question
-3. ห้าม bypass backend เพื่อเขียน Firestore health data จาก client
-4. อัปเดต contract ก่อน endpoint/client changes
-5. ทุก AI/OCR result ต้องเป็น Draft จนยืนยัน
-6. เมื่อเสร็จ task ให้อัปเดต status, tests และ ADR ที่เกี่ยวข้อง
-7. MVP เป็น Web App แบบ Mobile-first PWA; ห้ามเพิ่ม Native Android/iOS dependency หรือ native-only requirement
-8. Browser capability ทุกตัวต้องมี detection, fallback และ test ตาม Browser Support Policy
+- Read `00-project-overview.md`, `01-architecture.md`, `02-coding-rules.md`, `04-api-standard.md`, `07-security-rules.md` and relevant backlog before coding
+- Never invent medical behavior or silently choose an Open Decision
+- Do not use real PII/PHI in fixtures
+- Update ADR, API schema, tests and task status in the same change
+- Stop and mark `[!] blocked` for legal/medical/security decisions requiring owner approval

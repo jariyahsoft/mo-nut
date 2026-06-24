@@ -1,258 +1,244 @@
 # 01 — Architecture
 
-**Source:** `mo-nut-SRS-mobile-first-PWA.md` Sections 3, 9–13, 20–21 และ 29
+> **Source:** `mo-nut-SRS-two-phase.md` เวอร์ชัน 1.0, วันที่ 24 มิถุนายน 2026. เอกสารนี้ต้องอ่านร่วมกับไฟล์อื่นใน `docs/design/`
 
-## Architecture Goals
+## 1. Architecture goals
 
-- พัฒนา Web Application แบบ Mobile-first PWA โดยใช้ Progressive Enhancement
-- Frontend และ Backend ทำงานขนานกันผ่าน OpenAPI
-- ใช้ Firebase เพื่อความเร็วของ MVP แต่ลด vendor lock-in
-- แยก Domain Logic, Application Use Cases และ Infrastructure
-- รองรับ Offline-aware workflows ผ่าน Service Worker, IndexedDB และ Sync Queue โดยไม่สมมติว่า Background Sync ใช้ได้ทุก Browser
-- ปกป้องข้อมูลสุขภาพด้วย server-side authorization
-- รองรับการย้าย Firestore ไป PostgreSQL หรือ MongoDB
+- API-first, contract-first และ client-independent
+- Business rules/authorization authoritative ที่ server
+- Database-agnostic domain model
+- Offline-aware, idempotent และ auditable
+- รองรับ PWA และ Mobile App โดยไม่สร้าง backend ซ้ำ
+- Privacy by Design, least privilege และ environment isolation
+- ทำให้ทีม PWA, Backend, Mobile, QA และ AI integration ทำงานขนานกัน
 
-## Proposed Stack
-
-| Area | Choice | Rationale |
-|---|---|---|
-| Patient/Caregiver client | TypeScript + React/Next.js หรือ Framework เทียบเท่า | Mobile-first responsive web, SSR/CSR ตามหน้าที่ และ PWA จาก codebase เดียว |
-| Doctor Lite/Admin | Web routes/modules แยกตาม role; deploy แยกได้เมื่อจำเป็น | MVP ยังไม่ใช่ Full Doctor Portal; reuse contract/design system |
-| Backend | NestJS + TypeScript | Modular, DI, validation, OpenAPI |
-| Runtime | Cloud Run หรือ Functions Gen 2 | Managed scale และ Firebase integration |
-| Auth | Firebase Authentication | Email/password และ Google เป็น MUST; Phone OTP เป็น SHOULD เมื่อเปิด Provider |
-| Primary DB | Cloud Firestore | MVP speed, managed service |
-| File storage | Cloud Storage | Images, PDF, audio |
-| Push | FCM Web Push + In-app | Web Push เป็น capability-dependent และ In-app เป็น baseline |
-| PWA/Local DB | Web App Manifest + Service Worker + IndexedDB | App Shell, controlled cache, offline queue และ per-account data isolation |
-| Contract | OpenAPI 3.1 | Generated clients และ mock server |
-
-## System Context
-
-```mermaid
-flowchart LR
-  P[Patient PWA] --> API[Mo-nut REST API]
-  C[Caregiver PWA] --> API
-  D[Doctor Lite Web] --> API
-  A[Admin Web] --> API
-  API --> AUTH[Firebase Auth]
-  API --> DOMAIN[Application & Domain Modules]
-  DOMAIN --> REPO[Repository Interfaces]
-  REPO --> FS[Firestore Adapters]
-  REPO -. future .-> PG[PostgreSQL Adapters]
-  REPO -. future .-> MG[MongoDB Adapters]
-  DOMAIN --> STORAGE[Cloud Storage]
-  DOMAIN --> JOBS[Cloud Tasks / Scheduler / PubSub]
-  JOBS --> FCM[Firebase Cloud Messaging]
-  JOBS --> AI[OCR / STT / AI Providers]
-```
-
-## Layering
-
-### Presentation Layer
-
-- REST controllers
-- Authentication middleware
-- Request DTO validation
-- HTTP error mapping
-- OpenAPI annotations/spec
-
-### Application Layer
-
-- Use cases เช่น `CreateAppointment`, `ConfirmMedicationEvent`
-- Transaction boundaries
-- Permission and consent orchestration
-- Calls to repositories and provider interfaces
-
-### Domain Layer
-
-- Entities, value objects, enums
-- Invariants and domain services
-- ไม่มี Firebase, HTTP หรือ database SDK
-
-### Infrastructure Layer
-
-- Firestore repositories
-- Firebase Admin Auth adapter
-- Storage adapter
-- FCM adapter
-- OCR/STT providers
-- Logging and monitoring
-
-## Backend Module Boundaries
-
-```text
-identity
-patients
-caregivers
-appointments
-medications
-health
-visits
-media
-checklists
-questions
-maps
-sos
-reports
-notifications
-consents
-audit
-admin
-```
-
-แต่ละ module ต้องมี `domain/`, `application/`, `infrastructure/`, `presentation/` และห้ามเข้าถึง collection ของ module อื่นโดยตรงนอก repository/use case ที่กำหนด
-
-## Frontend Structure
-
-```text
-apps/web/src/
-├── app/                  # routes, layouts, providers
-├── components/           # accessible design system
-├── core/
-│   ├── api/              # generated OpenAPI client
-│   ├── auth/
-│   ├── pwa/              # manifest, service-worker registration
-│   ├── offline/          # IndexedDB, cache policy, sync queue
-│   ├── errors/
-│   ├── i18n/
-│   └── telemetry/
-└── features/
-    ├── appointments/
-    ├── medications/
-    ├── health/
-    ├── caregivers/
-    ├── checklists/
-    ├── questions/
-    ├── visit-mode/
-    ├── reports/
-    └── sos/
-```
-
-Feature ต้องแยก UI, application state/use cases, contract mapping และ storage adapter; component ห้ามเรียก Firebase/Firestore โดยตรง
-
-## Request Flow
-
-```mermaid
-sequenceDiagram
-  participant UI as React PWA UI
-  participant Repo as Client Service/Queue
-  participant API as Backend API
-  participant Use as Use Case
-  participant DB as Repository Adapter
-  UI->>Repo: createAppointment(input)
-  Repo->>API: POST /api/v1/patients/{id}/appointments
-  API->>API: Verify Firebase ID token
-  API->>Use: Execute command
-  Use->>Use: Check permission + consent + rules
-  Use->>DB: Save domain entity
-  DB-->>Use: Entity
-  Use-->>API: Result DTO
-  API-->>Repo: JSON contract
-  Repo-->>UI: Domain model
-```
-
-## Authentication and Session Model
-
-- Client sign-in ผ่าน Firebase Auth
-- Client ส่ง Firebase ID token ใน `Authorization: Bearer`
-- Backend verify token ทุก request
-- Domain user ID แยกจาก `firebaseUid`
-- Custom claims ใช้เป็น coarse role hint เท่านั้น; permission จริงอ่านจาก domain data
-- MFA บังคับสำหรับ Doctor/Admin เมื่อเปิด role เหล่านี้
-
-## Data Storage Strategy
-
-- Firestore top-level collections
-- UUIDv7/ULID เป็น portable ID
-- Foreign relation เก็บเป็น string ID
-- ไม่ใช้ `DocumentReference`, Firestore `Timestamp` หรือ `GeoPoint` ใน domain DTO
-- Files อยู่ Storage; metadata อยู่ database
-- Audit และ event collections เป็น append-only
-
-## PWA, Offline and Sync
-
-- Web App Manifest กำหนด installability, icons, start URL, scope, safe area และ standalone mode
-- Service Worker cache เฉพาะ versioned App Shell และข้อมูลที่นโยบายอนุญาต; PHI ใช้ Network First และ minimize cache
-- IndexedDB แยก cache/pending operations ตาม account และ patient context
-- Optimistic UI สำหรับ medication event และ measurement
-- Offline mutation มี `client_mutation_id`; batch ผ่าน `POST /api/v1/sync/batch` และคืนผลรายรายการ
-- Version field ใช้ optimistic concurrency
-- Permission/account status ใช้ server-wins
-- Conflict ที่อาจสูญเสียข้อมูลต้องให้ผู้ใช้ review
-- Auto-sync เมื่อกลับ online/เปิดแอปเมื่อทำได้ พร้อมปุ่ม Sync เอง; ห้ามพึ่ง Background Sync เพียงช่องทางเดียว
-- Logout ล้าง Offline Data ตามนโยบาย และห้ามล้าง pending item โดยไม่แจ้งผู้ใช้
-
-## Background Jobs and Events
-
-- Outbox event บันทึกใน transaction เดียวกับ state change
-- Worker ประมวลผล notification, OCR, STT, report generation
-- Retry ด้วย exponential backoff และ dead-letter handling
-- Scheduled jobs สร้าง medication events และ appointment reminders
-
-## Contract-first Parallel Development
-
-```mermaid
-flowchart LR
-  Story[User Story] --> Contract[OpenAPI + Examples]
-  Contract --> Mock[Mock Server]
-  Contract --> FE[Frontend Generated Client]
-  Contract --> BE[Backend Contract Tests]
-  FE --> Integration[Integration]
-  BE --> Integration
-  Integration --> QA[QA/E2E]
-```
-
-ทุก feature ต้องกำหนด request, response, errors, permissions และ acceptance criteria ก่อน implement
-
-## Deployment Topology
+## 2. Proposed logical architecture
 
 ```mermaid
 flowchart TB
-  CDN[Firebase Hosting/CDN] --> PWA[Mobile-first PWA]
-  Browser[Mobile/Tablet/Desktop Browser] --> CDN
-  PWA --> LB[HTTPS Endpoint]
-  LB --> Run[Cloud Run / Functions Gen 2]
-  Run --> Firestore
-  Run --> Storage
-  Run --> Tasks[Cloud Tasks/PubSub]
-  Tasks --> Workers[Background Workers]
-  Workers --> FCM
-  Workers --> AI[OCR/STT]
+  PWA[Phase 1 PWA / Web Portal]
+  MOB[Phase 2 Mobile App]
+  MOCK[Contract Mock Server]
+  GW[API Gateway / BFF]
+  APP[Application Services / Use Cases]
+  POL[Domain Policies & State Machines]
+  REPO[Repository Ports]
+  INT[Integration Ports]
+  FS[(Firestore Adapter)]
+  OBJ[(Object Storage)]
+  OCR[OCR/STT/AI Adapters]
+  MSG[Push/Email/SMS Adapters]
+  MAP[Map/Health/Bluetooth Adapters]
+  AUD[(Audit/Event Store)]
+
+  PWA --> GW
+  MOB --> GW
+  MOCK -. contract development .-> PWA
+  MOCK -. contract development .-> MOB
+  GW --> APP --> POL
+  APP --> REPO
+  APP --> INT
+  REPO --> FS
+  REPO --> OBJ
+  REPO --> AUD
+  INT --> OCR
+  INT --> MSG
+  INT --> MAP
 ```
 
-## Observability
+## 3. Technology options
 
-- Structured JSON logs พร้อม requestId
-- Cloud Monitoring metrics และ alerts
-- Web error reporting, Core Web Vitals และ service-worker/sync failure metrics
-- Sentry หรือเทียบเท่าเป็น option สำหรับ unified frontend tracing โดยต้อง redact PHI
-- ห้าม log transcript, medication detail, access token หรือ raw PHI
+### 3.1 PWA framework — Open Decision
 
-## Scalability Considerations
-
-- API stateless
-- Pagination ทุก list
-- Query-driven indexes
-- Event/audit data แยก collection และเตรียม partition เมื่อย้าย SQL
-- Large reports และ media processing ทำ async
-- Tenant/organization ID อยู่ใน entity ที่เกี่ยวข้อง
-
-## Key Tradeoffs
-
-| Decision | Benefit | Cost/Risk |
+| Option | Strength | Tradeoff |
 |---|---|---|
-| Mobile-first PWA | deploy เร็ว ไม่ต้องผ่าน App Store และใช้ codebase เดียว | Browser capability, Web Push และ background execution ไม่สม่ำเสมอ |
-| Firestore | MVP เร็ว | joins/reporting จำกัดและมี migration cost |
-| Backend-only data writes | security/portability | latency และงาน backend เพิ่ม |
-| Offline-first | reliability | conflict/sync complexity |
-| AI drafts with confirmation | safety | interaction เพิ่มหนึ่งขั้นตอน |
+| Next.js + TypeScript | ecosystem, SSR/BFF support, routing/tooling | framework complexity; must avoid coupling BFF to domain |
+| React + Vite + TypeScript | simple SPA/PWA and clear API boundary | SSR/SEO/edge features require additions |
+| Nuxt + TypeScript | strong Vue DX and SSR/PWA options | team skill/ecosystem decision |
 
-## Open Technical Decisions
+Selection criteria: accessibility, service-worker control, typed API generation, bundle size, team skill, long-term support และ test tooling
 
-1. React/Next.js baseline และ PWA/service-worker tooling ที่ใช้จริง
-2. Cloud Run vs Functions Gen 2 เป็น default API runtime
-3. Browser Support Policy และ fallback matrix
-4. Provider สำหรับ OCR/STT และ data residency
-5. Queue implementation: Cloud Tasks, Pub/Sub หรือ combination
-6. Secret field-level encryption scope
+### 3.2 Mobile framework — Open Decision before Phase 2
+
+| Option | Strength | Tradeoff |
+|---|---|---|
+| Flutter | consistent UI, strong cross-platform rendering | Dart stack separate from TypeScript packages |
+| React Native | TypeScript sharing and ecosystem | native dependency/version management |
+
+### 3.3 Backend compute
+
+- Cloud Functions เหมาะกับ event-driven function ขนาดเล็ก
+- Cloud Run เหมาะกับ versioned API, container control และ long-running/worker workloads
+- การเลือกต้องทำราย service และบันทึก ADR
+
+## 4. System context
+
+```mermaid
+flowchart LR
+  PAT[Patient]
+  CAR[Caregiver]
+  CLN[Clinician]
+  ADM[Admin/Support]
+  SYS[Mo-nut]
+  IDP[Identity Provider]
+  EXT[OCR/STT/Map/Push Providers]
+  PAT --> SYS
+  CAR --> SYS
+  CLN --> SYS
+  ADM --> SYS
+  SYS --> IDP
+  SYS --> EXT
+```
+
+## 5. Request/data flow
+
+### Command flow
+
+1. Client validates presentation-level input
+2. Client sends token, correlation ID, app/platform version และ idempotency key เมื่อจำเป็น
+3. API authenticates and resolves active role/patient context
+4. Authorization checks role + consent + constraints
+5. Application service validates state transition/business rule
+6. Repository commits canonical entity/history/audit atomically where required
+7. Server returns canonical entity/version
+8. Client updates cache/local database
+
+### OCR/STT flow
+
+1. Client requests signed upload and uploads asset
+2. API creates `DocumentAsset`/`AudioRecord`
+3. Worker creates asynchronous `ProcessingJob`
+4. Provider output is stored as `ExtractedDraft`
+5. UI displays confidence and requires review
+6. Only `confirmed` draft can be applied to Appointment/Medication/Checklist
+
+### Offline sync flow
+
+```mermaid
+sequenceDiagram
+  participant C as Client Outbox
+  participant A as Sync API
+  participant D as Domain/Repository
+  C->>A: operations + baseVersion + idempotencyKey
+  A->>A: auth/permission/schema/idempotency
+  A->>D: apply in dependency order
+  alt success
+    D-->>A: canonical entity + new version
+    A-->>C: synced result + cursor
+  else conflict
+    A-->>C: VERSION_CONFLICT + server snapshot
+  end
+```
+
+## 6. Frontend structure
+
+- App shell, routing, role-aware navigation
+- Feature modules aligned with SRS modules
+- Generated API client; no direct Firestore query in UI
+- Presentation state separated from server cache and offline outbox
+- Shared design tokens and accessible components
+- Capability service for camera, mic, notification, location, share and offline
+- Error boundary, permission state, loading/empty/offline/conflict states
+
+## 7. Backend/API structure
+
+```text
+transport/       HTTP handlers, auth middleware, request mapping
+application/     use cases, transactions, orchestration
+ domain/          entities, value objects, policies, state machines
+ ports/           repository and provider interfaces
+ adapters/        Firestore, Storage, OCR/STT, push, map
+ workers/         notification, processing, report, retention jobs
+ contracts/       OpenAPI, JSON Schema, enums, events
+ observability/   structured logs, metrics, traces, audit events
+```
+
+## 8. Data storage
+
+- Firestore เป็น initial primary store ผ่าน adapter เท่านั้น
+- Object Storage เก็บ image/audio/PDF; database เก็บ metadata/checksum
+- Audit/history เป็น append-oriented record
+- Read models ใช้ denormalization ได้ แต่ต้อง rebuild ได้จาก source of truth
+- Public API ใช้ ISO-8601 JSON types ไม่ส่ง Firebase-specific types
+
+## 9. Authentication/session model
+
+- External identity token exchanged for application session/claims
+- One account can hold multiple roles; active context must be explicit
+- Biometric is local unlock only; server credential remains token/session
+- Device/session revocation supported
+- High-risk/admin accounts require stronger authentication policy
+
+## 10. Background jobs/events
+
+| Job/Event | Trigger | Reliability rule |
+|---|---|---|
+| OCR/STT processing | Asset ready | async retry, timeout, provider metadata |
+| Dose occurrence generation | Schedule/effective date | deterministic + idempotent |
+| Notification delivery | appointment/dose/checklist event | delivery log + retry + escalation |
+| Report generation | user request | async status + expiring asset |
+| Retention cleanup | policy schedule | audit evidence; no legal-hold deletion |
+| Read-model rebuild | domain change/recovery | repeatable and observable |
+
+## 11. Search/cache/CDN
+
+- Search engine: Not applicable yet; use scoped queries and indexed metadata until approved
+- CDN: allowed for public/static assets; PHI assets require signed URLs and no public cache
+- Client cache: must respect data classification and logout/device-revoke wipe rules
+- Server cache: only for non-sensitive reference data unless threat model approves
+
+## 12. Observability
+
+- Correlation ID end-to-end
+- Structured logs without unnecessary PHI
+- Metrics: latency, error, queue age, notification delivery, OCR/STT failure, sync conflict
+- Distributed trace sampling for API/workers
+- Crash reporting for PWA/Mobile with redaction
+- Security/audit events separated from product analytics
+
+## 13. Deployment topology
+
+```mermaid
+flowchart TB
+  DEV[Development Project]
+  STG[Staging/UAT Project]
+  PROD[Production Project]
+  CI[CI/CD]
+  CI --> DEV
+  CI --> STG
+  CI -->|manual approval| PROD
+```
+
+Each environment must have separate identity project, database, bucket, secrets and provider credentials.
+
+## 14. Scalability considerations
+
+- Partition high-volume time-series by patient/time and index deliberate queries
+- Async queue for OCR/STT, notifications and reports
+- Batch notification with per-recipient idempotency
+- Avoid unbounded arrays/nested documents
+- Use cursor pagination and delta sync
+- Cost/budget alerts for AI, SMS and storage
+
+## 15. Key tradeoffs
+
+| Decision direction | Benefit | Cost/Risk |
+|---|---|---|
+| API-only client | migration/security consistency | additional backend work |
+| Firestore initially | rapid delivery | query/index constraints and adapter discipline |
+| PWA first | fast pilot | notification/offline limitations |
+| Human confirmation | safety and accountability | extra user step |
+| Cross-platform mobile | shared code | native bridge and store maintenance |
+
+## 16. Open technical decisions
+- [ ] Framework PWA และ Cross-platform Mobile App
+- [ ] Firebase Functions เทียบกับ Cloud Run สำหรับแต่ละ Service
+- [ ] OCR/STT Provider, Region, Data Retention และ Cost
+- [ ] Map Provider และรูปแบบค่าใช้จ่าย
+- [ ] ช่องทางสำรอง SMS/Email/LINE และผู้รับผิดชอบค่าใช้จ่าย
+- [ ] Browser/OS Version ขั้นต่ำ
+- [ ] Retention Period ของเสียง เอกสาร Audit และ Notification Log
+- [ ] Threshold/ข้อความเตือนที่ต้องผ่านผู้เชี่ยวชาญทางการแพทย์
+- [ ] Legal basis/Consent flow สำหรับผู้เยาว์หรือผู้แทนโดยชอบธรรม
+- [ ] SLA ของการถอนสิทธิ์ Data Export และ Account Deletion
+- [ ] รายการ Health/Bluetooth Device ที่อนุมัติใน Phase 2

@@ -1,332 +1,400 @@
-# 12 — AI Prompts for UX/UI Presentation Images
+# 12 — UI Image Generation Prompts
 
-**Purpose:** ใช้สร้างภาพ mockup หน้าจอ Mo-nut สำหรับนำเสนอลูกค้า นักลงทุน และทีมออกแบบ  
-**Source:** `mo-nut-PRD-mobile-first-PWA.md` v1.1, `mo-nut-SRS-mobile-first-PWA.md` v1.0 และ [08-ui-guide.md](08-ui-guide.md)
+> **Source:** `mo-nut-SRS-two-phase.md` เวอร์ชัน 1.0, วันที่ 24 มิถุนายน 2026. เอกสารนี้ต้องอ่านร่วมกับไฟล์อื่นใน `docs/design/`
 
-## วิธีใช้
+## 1. Purpose
 
-1. ใช้ **Master Style Prompt** ร่วมกับ prompt ของแต่ละหน้า
-2. สร้างภาพ Mobile-first PWA viewport อัตราส่วน 9:16 ความละเอียดสูง โดย UI ต้องดูเป็นเว็บที่ติดตั้งได้ ไม่ใช่ Native App เฉพาะแพลตฟอร์ม
-3. ใช้ภาพแบบ “flat responsive PWA screen” สำหรับนำไปวางในสไลด์ หรือระบุ “inside modern smartphone browser/standalone PWA mockup” เมื่อต้องการภาพนำเสนอ
-4. โมเดลสร้างภาพอาจสะกดภาษาไทยผิด ควรใช้ข้อความสั้นและแก้ text ใน Figma ภายหลัง
-5. สร้างทุกหน้าด้วย seed/style reference เดียวกันเพื่อให้สีและ component สม่ำเสมอ
+ชุด prompt นี้ใช้สร้างภาพแนวทาง UX/UI สำหรับลูกค้า นักลงทุน ทีมออกแบบ และทีมพัฒนา ไม่ใช้แทน implementation specification. Source of screen inventory: [`08-ui-guide.md`](08-ui-guide.md).
 
-## Master Style Prompt
+## 2. How to use
 
-```text
-ออกแบบหน้าจอ Web Application แบบ Mobile-first Progressive Web App (PWA) ชื่อ “หมอนัด — Mo-nut” สำหรับผู้ป่วยโรคเรื้อรังและผู้สูงอายุ ใช้งานผ่าน smartphone browser หรือ standalone home-screen mode, modern healthcare, calm, trustworthy, friendly Thai responsive web UI, clean white cards on very light warm gray-green background, primary teal #1D7A72, secondary blue #4D7CFE, success green, warning amber, emergency red used only for SOS, Thai-friendly sans-serif typography, large readable text, touch targets at least 44x44 CSS px, large rounded buttons, 16px rounded cards, generous spacing, clear icons with text labels, accessible high contrast, visible online/offline/sync state when relevant, no visual clutter, premium polished Figma-quality UI, consistent bottom navigation with วันนี้ นัดหมาย ยา สุขภาพ โปรไฟล์, safe-area aware, realistic Thai healthcare content, no hospital brand logo, no copyrighted logos, no native-only Android/iOS chrome, full screen flat responsive PWA UI, portrait 9:16, high resolution
-```
+1. Prepend `[MASTER STYLE]` and `[NEGATIVE PROMPT]` to each screen prompt
+2. Generate mobile flat screen at 390×844 or specified responsive variant
+3. Correct Thai text and exact spacing in a design tool
+4. Reuse the same tokens, icons, sample patient and navigation across all screens
 
-## Negative Prompt
+## 3. Master style
 
 ```text
-avoid tiny text, avoid dark gloomy hospital style, avoid excessive gradients, avoid neon colors, avoid glassmorphism, avoid clutter, avoid complex medical charts, avoid English-only labels, avoid unrealistic body anatomy, avoid visible personal ID numbers, avoid real patient data, avoid advertisement banners, avoid red as primary color, avoid native Android or iOS exclusive controls, avoid desktop-only density, avoid implying push/background capability always works
+[MASTER STYLE]
+Create a high-fidelity UX/UI concept for “หมอนัด — Mo-nut”, a Thai mobile-first health companion for chronic-care patients, elderly users, caregivers and consent-scoped clinicians. Calm trustworthy teal/blue-green visual direction, warm amber reminders, red only for SOS/high-risk actions, light neutral background, strong contrast, large readable Thai typography, 44px+ touch targets, rounded accessible cards, simple line icons with text labels, generous spacing, realistic but entirely fictional Thai sample data, no real brands or hospital logos. Mobile reference 390×844, clean flat app screen rather than decorative poster, preserve safe areas and bottom navigation. Show clear role/patient context, privacy status, offline/last-sync indicators and human confirmation for OCR/STT/AI. Never imply diagnosis, automatic medication change or guaranteed emergency response. All text should be short; typography may require correction in a design tool after image generation.
 ```
 
----
-
-# A. Brand and Onboarding
-
-## Screen 01 — Splash Screen
+## 4. Negative prompt
 
 ```text
-[MASTER STYLE] สร้างหน้า Splash ของแอป “หมอนัด Mo-nut” โลโก้รูปปฏิทินผสมหัวใจและเครื่องหมายเตือนยาแบบเรียบง่าย อยู่กึ่งกลาง หน้าพื้นสีอ่อน มี tagline ภาษาไทย “นัดไม่ลืม ยาไม่พลาด” ด้านล่าง ดูอบอุ่นและน่าเชื่อถือ ไม่มีปุ่มหรือข้อมูลอื่น
+[NEGATIVE PROMPT]
+No tiny text, clutter, dark low-contrast UI, neon colors, excessive gradients, glassmorphism that harms readability, unlabeled icons, hidden critical actions, real patient PII/PHI, real hospital logos, prescription advice, diagnosis, automatic drug adjustment, misleading “SOS delivered” state without channel status, scary medical imagery, copyrighted brand assets, desktop-only layout for mobile screens, or fantasy features absent from requirements.
 ```
 
-## Screen 02 — Onboarding Benefits
+## 5. Shared fictional sample data
+
+- Patient: “คุณสมใจ ใจดี”, อายุ 68 ปี
+- Caregiver: “นิด — ลูกสาว”
+- Facility: “ศูนย์สุขภาพชุมชนตัวอย่าง”
+- Appointment: 28 มิ.ย. 2569 เวลา 09:30 น.
+- Medication: “ยาความดัน A 5 mg” (fictional label)
+- Latest measurement: 128/78 mmHg
+
+Do not use real contact numbers, medical identifiers or credentials.
+
+## 6. Screen prompts
+
+### UI-01 — Welcome / Sign in / OTP
 
 ```text
-[MASTER STYLE] หน้า onboarding แบบภาพประกอบ 3 ประโยชน์ในหน้าเดียว: เตือนนัดแพทย์, แสดงรูปยาเมื่อถึงเวลา, แชร์ข้อมูลให้ผู้ดูแล ใช้ illustration คนไทยวัยผู้สูงอายุกับลูกสาวในสไตล์ vector friendly มีหัวข้อ “ดูแลทุกนัด ใส่ใจทุกวัน” ปุ่มใหญ่ “เริ่มใช้งาน” และลิงก์ “เข้าสู่ระบบ”
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: secure onboarding. User role: All. Key content/components: Mo-nut logo wordmark, phone/email options, Google, Apple note, OTP input, privacy link. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “phone sign-in”. Secondary action: “language/accessibility”. Navigation/context: none. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 03 — Login and Registration
+Source: `08-ui-guide.md` page inventory `UI-01` and related SRS functional module.
+
+### UI-02 — Patient onboarding and accessibility
 
 ```text
-[MASTER STYLE] หน้าเข้าสู่ระบบที่เรียบง่ายสำหรับผู้สูงอายุ มีช่องหมายเลขโทรศัพท์ขนาดใหญ่พร้อมธงไทย ปุ่มหลัก “รับรหัส OTP” ปุ่มรอง “เข้าสู่ระบบด้วย Google” และ “เข้าสู่ระบบด้วย Apple” ข้อความ privacy สั้น อ่านง่าย ไม่มีองค์ประกอบรก
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: complete a simple elderly-friendly profile. User role: Patient. Key content/components: progress stepper, name/date of birth, large-text toggle, language, emergency contact. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “continue”. Secondary action: “save later”. Navigation/context: onboarding. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 04 — Patient Profile Setup
+Source: `08-ui-guide.md` page inventory `UI-02` and related SRS functional module.
+
+### UI-03 — Patient Today dashboard
 
 ```text
-[MASTER STYLE] หน้า setup โปรไฟล์ผู้ป่วยแบบ step 1 of 3 มีรูปโปรไฟล์ placeholder, ชื่อ, วันเกิด, โรคประจำตัวเป็น selectable chips เช่น เบาหวาน ความดัน โรคหัวใจ, ตัวเลือกขนาดตัวอักษร “ปกติ / ใหญ่” ปุ่มต่อไปเต็มความกว้าง และ progress indicator ด้านบน
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: see the next medicine, appointment and tasks immediately. User role: Patient. Key content/components: greeting, next-dose card, next-appointment card, checklist progress, latest blood pressure, Quick Capture, SOS. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “confirm dose / view appointment”. Secondary action: “view all”. Navigation/context: bottom nav Today active. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
----
+Source: `08-ui-guide.md` page inventory `UI-03` and related SRS functional module.
 
-# B. Patient Core Experience
-
-## Screen 05 — Patient Today Dashboard
+### UI-04 — Quick Capture sheet
 
 ```text
-[MASTER STYLE] หน้า “วันนี้” ของผู้ป่วย ช่วงเช้า แสดงคำทักทาย “สวัสดีค่ะ คุณสมพร” การ์ดนัดครั้งถัดไปโรงพยาบาลวันที่ 28 มิ.ย. 09:30 พร้อมปุ่มดูรายละเอียด การ์ดยารอบถัดไปพร้อมรูปเม็ดยาเวลา 08:00 และปุ่ม “กินแล้ว” ส่วน checklist วันนี้ 2 จาก 3 งาน การ์ดค่าความดันล่าสุด 128/82 และ floating quick capture button กล้อง/บวก Bottom navigation ครบ SOS icon เล็กแต่เห็นชัดบน header
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: capture common health information in one tap. User role: Patient/Caregiver. Key content/components: camera appointment, medicine label, audio, pressure, weight, glucose, symptom, question, checklist. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “choose capture type”. Secondary action: “close”. Navigation/context: modal bottom sheet. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 06 — Quick Capture Sheet
+Source: `08-ui-guide.md` page inventory `UI-04` and related SRS functional module.
+
+### UI-05 — Appointment list/calendar
 
 ```text
-[MASTER STYLE] หน้า bottom sheet Quick Capture ทับบน dashboard แสดง grid ปุ่มใหญ่ 6 รายการ: ถ่ายใบนัด, ถ่ายรูปยา, บันทึกเสียง, วัดความดัน, จดคำถาม, เพิ่มเช็กลิสต์ แต่ละปุ่มมี icon สีเรียบและข้อความไทยขนาดใหญ่ ใช้มือเดียวได้
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: review upcoming and past appointments. User role: Patient/Caregiver. Key content/components: month strip, status chips, facility, department, caregiver, preparation badge. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “open appointment”. Secondary action: “add appointment”. Navigation/context: Appointments nav active. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
----
+Source: `08-ui-guide.md` page inventory `UI-05` and related SRS functional module.
 
-# C. Appointment and Travel
-
-## Screen 07 — Appointment List and Calendar
+### UI-06 — Appointment detail and preparation
 
 ```text
-[MASTER STYLE] หน้า “นัดหมาย” มี toggle รายการ/ปฏิทิน ปฏิทินรายเดือนเน้นวันที่มีนัด ด้านล่างเป็น appointment cards แสดงโรงพยาบาล แผนก วันเวลา สถานะ “ยืนยันแล้ว” และปุ่ม “เปิดแผนที่” มีปุ่มเพิ่มนัดแบบเด่น
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: prepare for a medical visit. User role: Patient/Caregiver. Key content/components: date/time, facility map, fasting instruction, documents checklist, caregiver, reminders, status timeline. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “start navigation / confirm attendance”. Secondary action: “edit/reschedule”. Navigation/context: appointment detail. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 08 — Appointment Detail
+Source: `08-ui-guide.md` page inventory `UI-06` and related SRS functional module.
+
+### UI-07 — OCR capture and review
 
 ```text
-[MASTER STYLE] หน้ารายละเอียดนัด: โรงพยาบาลตัวอย่าง แผนกอายุรกรรม วันที่ 28 มิ.ย. 09:30 อาคาร A ชั้น 2 มี timeline การเตรียมตัว เช่น งดอาหาร 8 ชั่วโมง นำผลตรวจและยาเดิมมา มีการ์ดผู้ดูแล “คุณนิดจะพาไป” ปุ่มหลัก “ดูเส้นทาง” ปุ่มรอง “เปิดโหมดไปพบแพทย์”
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: verify extracted appointment fields before saving. User role: Patient/Caregiver. Key content/components: original document thumbnail, processing status, confidence per field, editable date/time/facility/doctor, clear “ตรวจสอบก่อนบันทึก”. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “confirm and save”. Secondary action: “retry/manual entry”. Navigation/context: review step. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 09 — Scan Appointment Card Camera
+Source: `08-ui-guide.md` page inventory `UI-07` and related SRS functional module.
+
+### UI-08 — Doctor Visit Mode
 
 ```text
-[MASTER STYLE] หน้ากล้องสำหรับสแกนใบนัด มีกรอบถ่ายเอกสารแบบชัดเจน คำแนะนำ “วางใบนัดให้อยู่ในกรอบ” ปุ่ม shutter ขนาดใหญ่ ตัวเลือกแฟลชและเลือกรูปจากคลัง พื้นที่นอกกรอบมืดลงเล็กน้อย แต่ UI ไม่ดูเป็นแอปธนาคาร
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: show all visit essentials in one focused screen. User role: Patient/Caregiver. Key content/components: appointment header, prepared questions, current medicines, recent report, capture audio/document, next appointment. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “record visit note”. Secondary action: “open report”. Navigation/context: visit mode header. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 10 — OCR Review
+Source: `08-ui-guide.md` page inventory `UI-08` and related SRS functional module.
+
+### UI-09 — Medication list
 
 ```text
-[MASTER STYLE] หน้า “ตรวจสอบข้อมูลใบนัด” แสดง thumbnail ใบนัดด้านบน และ form cards ที่ AI อ่านได้: วันที่ 28 มิ.ย. 2569, เวลา 09:30, โรงพยาบาล, แผนก, ห้องตรวจ แต่ละช่องมี confidence indicator เล็ก ๆ ช่องที่ไม่แน่ใจถูกไฮไลต์สี amber มีข้อความ “กรุณาตรวจสอบก่อนบันทึก” ปุ่มหลัก “ยืนยันและสร้างนัด”
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: see active medicines and stock status. User role: Patient/Caregiver. Key content/components: medicine image placeholders, schedule summary, next dose, low stock badge, active/paused filter. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “open medicine”. Secondary action: “add medicine”. Navigation/context: Medication nav active. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 11 — Travel and Traffic Plan
+Source: `08-ui-guide.md` page inventory `UI-09` and related SRS functional module.
+
+### UI-10 — Medication detail and schedule
 
 ```text
-[MASTER STYLE] หน้าแผนการเดินทางวันนัด แผนที่ครึ่งบนแสดงเส้นทางจากบ้านไปโรงพยาบาล traffic layer สีมาตรฐาน ครึ่งล่างมีการ์ด “นัด 09:30” “ใช้เวลา 55 นาที” “ควรออก 08:10” และ breakdown เดินทาง 40 นาที ลงทะเบียน 10 นาที สำรอง 5 นาที ปุ่มใหญ่ “เริ่มนำทาง” และปุ่ม “แจ้งผู้ดูแลว่ากำลังเดินทาง”
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: review medicine instructions and effective schedule. User role: Patient/Caregiver. Key content/components: fictional medicine, strength, before/after food, schedule timeline, source and safety disclaimer, inventory estimate. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “edit schedule”. Secondary action: “pause with reason”. Navigation/context: detail page. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
----
+Source: `08-ui-guide.md` page inventory `UI-10` and related SRS functional module.
 
-# D. Medication
-
-## Screen 12 — Medication List
+### UI-11 — Dose reminder and response
 
 ```text
-[MASTER STYLE] หน้า “ยา” แสดงยาวันนี้แยก เช้า กลางวัน เย็น แต่ละ medication card มีรูปยา ชื่อ ขนาด จำนวน และเวลา สถานะยาที่กินแล้วเป็น success check สีเขียว ยาที่กำลังจะถึงใช้ teal outline มีปุ่ม “เพิ่มยา” และ summary “วันนี้กินแล้ว 2 จาก 4 รอบ”
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: respond safely to one due dose. User role: Patient. Key content/components: large medicine card, due time, instructions, photo, buttons taken/snooze/skip/issue, no preselected answer. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “กินแล้ว”. Secondary action: “เตือนภายหลัง / ข้าม”. Navigation/context: notification/deep-link context. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 13 — Add Medication
+Source: `08-ui-guide.md` page inventory `UI-11` and related SRS functional module.
+
+### UI-12 — Health dashboard and trends
 
 ```text
-[MASTER STYLE] หน้าเพิ่มยา มีพื้นที่ถ่ายรูปยาและบรรจุภัณฑ์ ช่องชื่อยา ขนาดยา จำนวน เลือกก่อนอาหาร/หลังอาหาร เวลาแบบ chips 08:00 และ 20:00 วันที่เริ่ม ปุ่ม “บันทึกยา” มีข้อความเตือนให้ตรวจข้อมูลจากฉลากหรือเภสัชกร ไม่แสดงคำแนะนำวินิจฉัย
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: understand measurements without diagnosis. User role: Patient/Caregiver. Key content/components: latest blood pressure, weight and glucose cards, accessible line chart plus text summary, filter day/week/month, source labels. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “add measurement”. Secondary action: “view history”. Navigation/context: Health nav active. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 14 — Medication Detail
+Source: `08-ui-guide.md` page inventory `UI-12` and related SRS functional module.
+
+### UI-13 — Add health measurement
 
 ```text
-[MASTER STYLE] หน้ารายละเอียดยา มีรูปเม็ดยาและแผงยาใหญ่ ชื่อ Metformin 500 mg วิธีใช้ 1 เม็ดหลังอาหารเช้าและเย็น ตารางเวลาวันนี้ จำนวนยาคงเหลือประมาณ 18 เม็ด กราฟ adherence 7 วันแบบเรียบ ปุ่มแก้ไขตารางและ “หยุดยาตามคำสั่งแพทย์” เป็น secondary action พร้อม confirmation concept
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: enter a measurement with unit and context. User role: Patient/Caregiver. Key content/components: large numeric inputs, unit, date/time, before/after meal context, source manual/device, validation guidance. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “save”. Secondary action: “cancel”. Navigation/context: form. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 15 — Medication Due Full-screen
+Source: `08-ui-guide.md` page inventory `UI-13` and related SRS functional module.
+
+### UI-14 — Checklist and doctor questions
 
 ```text
-[MASTER STYLE] หน้าแจ้งเตือนกินยาเต็มจอสำหรับผู้สูงอายุ เวลา 08:00 รูปยาใหญ่ชัด ชื่อ “Metformin 500 mg” ข้อความ “1 เม็ด หลังอาหารเช้า” ปุ่มหลักสี teal ขนาดใหญ่มาก “กินแล้ว” ปุ่มรอง “เตือนอีก 10 นาที” และ text button “ข้ามยา” มีข้อความ “โปรดตรวจรูปและชื่อยาก่อนรับประทาน” ไม่มีข้อมูลอื่นรบกวน
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: track recommendations and prepare questions. User role: Patient. Key content/components: today checklist with streak/progress, questions sorted by priority, add from symptom or dose issue. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “mark done”. Secondary action: “add question”. Navigation/context: tabbed checklist/questions. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 16 — Medication Missed Caregiver Alert
+Source: `08-ui-guide.md` page inventory `UI-14` and related SRS functional module.
+
+### UI-15 — Audio recording and STT review
 
 ```text
-[MASTER STYLE] หน้าการแจ้งเตือนผู้ดูแล แสดงการ์ดผู้ป่วย “คุณแม่สมพร” ยังไม่ได้ยืนยันยาเวลา 08:00 เกิน 45 นาที มีรูปยาเล็ก ปุ่ม “โทรหาแม่” “ส่งข้อความ” และ “ดูรายละเอียด” โทนเตือน amber ไม่ใช้สีแดงฉุกเฉิน
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: record with consent and review transcript. User role: Patient. Key content/components: consent checkbox, waveform/timer, pause/stop, transcript segments, highlighted uncertain phrases, link to visit. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “confirm transcript”. Secondary action: “edit/retry”. Navigation/context: recording workflow. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
----
+Source: `08-ui-guide.md` page inventory `UI-15` and related SRS functional module.
 
-# E. Health Measurements
-
-## Screen 17 — Health Dashboard
+### UI-16 — Caregiver invitation and permissions
 
 ```text
-[MASTER STYLE] หน้า “สุขภาพ” แสดง cards ค่าล่าสุด ความดัน 128/82 ชีพจร 72 น้ำหนัก 68.4 kg น้ำตาล 112 mg/dL ใช้ mini trend sparklines ที่อ่านง่าย มีข้อความสรุป “ค่าความดันเฉลี่ย 7 วันคงที่” และปุ่มใหญ่ “บันทึกค่าใหม่” ไม่วินิจฉัยโรค
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: grant only necessary access. User role: Patient. Key content/components: recipient method, caregiver relationship, grouped scope toggles, purpose, expiry, plain-language review. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “send invitation”. Secondary action: “cancel”. Navigation/context: sharing settings. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 18 — Record Blood Pressure
+Source: `08-ui-guide.md` page inventory `UI-16` and related SRS functional module.
+
+### UI-17 — Caregiver multi-patient dashboard
 
 ```text
-[MASTER STYLE] หน้าบันทึกความดัน มี input ตัวเลขขนาดใหญ่ 3 ช่อง: ตัวบน 128 ตัวล่าง 82 ชีพจร 72 เลือกบริบท “วัดที่บ้าน” เวลาอัตโนมัติ เพิ่มหมายเหตุได้ มี illustration วิธีนั่งวัดที่ถูกต้องแบบ minimal ปุ่ม “บันทึก”
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: switch patients without entering data for the wrong person. User role: Caregiver. Key content/components: large active-patient header/photo initials, patient cards, missed dose alert, upcoming appointments, context switch confirmation. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “open selected patient”. Secondary action: “view alerts”. Navigation/context: caregiver navigation. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 19 — Health Trend Chart
+Source: `08-ui-guide.md` page inventory `UI-17` and related SRS functional module.
+
+### UI-18 — Consent and access history
 
 ```text
-[MASTER STYLE] หน้ากราฟความดัน 30 วัน ใช้ line chart สองเส้นที่ชัดเจนแต่ไม่ซับซ้อน มี legend ตัวบน/ตัวล่าง summary cards ค่าเฉลี่ย สูงสุด ต่ำสุด ตัวเลือก 7 วัน 30 วัน 3 เดือน และ textual insight “มี 3 วันที่อยู่นอกช่วงที่ตั้งไว้” พร้อม action “เตรียมรายงานให้แพทย์”
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: see who accessed what and revoke safely. User role: Patient. Key content/components: active grants, scope/expiry, access timeline, share link usage, revoked state. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “revoke access”. Secondary action: “download history”. Navigation/context: privacy settings. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
----
+Source: `08-ui-guide.md` page inventory `UI-18` and related SRS functional module.
 
-# F. Doctor Visit, Questions and Audio
-
-## Screen 20 — Doctor Visit Mode
+### UI-19 — Report builder and share link
 
 ```text
-[MASTER STYLE] หน้า “ไปพบแพทย์วันนี้” เป็น guided checklist มี header นัด 09:30 โรงพยาบาล ด้านล่าง section 1 คำถาม 4 ข้อ section 2 ยาปัจจุบัน section 3 ค่าล่าสุด section 4 เอกสาร มี sticky bottom actions “บันทึกเสียงคำแนะนำ” และ “เพิ่มใบนัดครั้งต่อไป” ดูเป็นโหมดใช้งานจริงในโรงพยาบาลที่รวดเร็ว
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: select minimum data and create expiring access. User role: Patient. Key content/components: period selector, scope checklist, PDF/link/QR options, expiry, recipient purpose, privacy warning. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “create report/link”. Secondary action: “preview”. Navigation/context: report workflow. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 21 — Questions for Doctor
+Source: `08-ui-guide.md` page inventory `UI-19` and related SRS functional module.
+
+### UI-20 — SOS confirmation and delivery status
 
 ```text
-[MASTER STYLE] หน้า “คำถามสำหรับคุณหมอ” แสดงรายการคำถามเรียงความสำคัญ เช่น “เวียนหัวหลังยาเช้า ควรทำอย่างไร” “ควรตรวจเลือดอีกเมื่อไร” แต่ละรายการมี checkbox ถามแล้วและปุ่มบันทึกคำตอบ มีปุ่มเพิ่มคำถามด้วยเสียงหรือข้อความ และ reminder badge “ทบทวนก่อนวันนัด”
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: request help without accidental activation or false success. User role: Patient. Key content/components: large press-and-hold control, direct emergency call option, selected contacts/location info, after activation show call/message/location status separately. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “hold to start / call now”. Secondary action: “cancel”. Navigation/context: persistent SOS entry. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 22 — Audio Recording
+Source: `08-ui-guide.md` page inventory `UI-20` and related SRS functional module.
+
+### UI-21 — Emergency card and QR
 
 ```text
-[MASTER STYLE] หน้าบันทึกเสียงคำแนะนำ มี consent banner “โปรดยืนยันว่าได้รับอนุญาตจากผู้พูดแล้ว” toggle checked, waveform เรียบ, timer 03:42, ปุ่ม pause/stop ขนาดใหญ่, label เชื่อมกับนัดวันนี้ มีข้อความว่าไฟล์จะถูกเก็บอย่างปลอดภัยและสามารถถอดเป็นข้อความได้
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: show only user-selected emergency information. User role: Patient. Key content/components: name, blood group, allergies, important medicines, emergency contact, QR, privacy toggles and lock-screen preview. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “save visibility”. Secondary action: “hide all”. Navigation/context: emergency profile. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 23 — Transcript Review
+Source: `08-ui-guide.md` page inventory `UI-21` and related SRS functional module.
+
+### UI-22 — Notification center and preferences
 
 ```text
-[MASTER STYLE] หน้า “ตรวจสอบข้อความจากเสียง” แสดง transcript ภาษาไทยแบ่งย่อหน้าพร้อม timestamp มี highlighted action items เช่น “เดิน 30 นาที 4 วันต่อสัปดาห์” และ “นัดอีก 3 เดือน” แถบคำเตือน “AI อาจถอดคำผิด กรุณาตรวจสอบ” ปุ่ม “แก้ไขข้อความ” “สร้างเช็กลิสต์” และ “สร้างนัดครั้งถัดไป”
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: review reminders and choose privacy/channel. User role: All. Key content/components: today notifications, delivery status, appointment/medication/checklist categories, lock-screen privacy, web-push capability warning. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “enable notification”. Secondary action: “open settings help”. Navigation/context: notification nav. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
----
+Source: `08-ui-guide.md` page inventory `UI-22` and related SRS functional module.
 
-# G. Checklist and Progress
-
-## Screen 24 — Doctor Recommendation Checklist
+### UI-23 — Doctor Lite patient summary
 
 ```text
-[MASTER STYLE] หน้า “คำแนะนำจากแพทย์” มี weekly checklist cards: เดิน 30 นาที 4 วัน/สัปดาห์, วัดความดันเช้า-เย็น, ลดอาหารเค็ม แสดง progress ring 75% และ day chips จันทร์ถึงอาทิตย์ รายการวันนี้มีปุ่มเช็คขนาดใหญ่ มีข้อความให้กำลังใจอ่อนโยน
+[MASTER STYLE]
+Create 1440×1024 desktop web. Objective: review consent-scoped summary efficiently. User role: Clinician. Key content/components: consent banner and expiry, demographics, current medicines, adherence trend, measurements, questions, checklist progress, access purpose. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “add approved note/checklist”. Secondary action: “export permitted summary”. Navigation/context: desktop/tablet sidebar. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 25 — Checklist Detail and Weekly Progress
+Source: `08-ui-guide.md` page inventory `UI-23` and related SRS functional module.
+
+### UI-24 — Offline queue and conflict resolution
 
 ```text
-[MASTER STYLE] หน้ารายละเอียดเป้าหมาย “เดินออกกำลังกาย” เป้าหมาย 30 นาที 4 วันต่อสัปดาห์ แสดง progress 3/4 วัน calendar heatmap เรียบ streak 5 วัน note จากแพทย์ และปุ่ม “ทำแล้ววันนี้” ปุ่มรอง “วันนี้ทำไม่ได้” พร้อมเลือกเหตุผล ไม่มี gamification แบบเด็กเกินไป
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: understand what is saved locally and resolve conflict. User role: Patient/Caregiver. Key content/components: offline banner, queued dose/measurement/checklist items, last synced time, one appointment conflict comparing local/server. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “keep server / review change”. Secondary action: “retry sync”. Navigation/context: sync status. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
----
+Source: `08-ui-guide.md` page inventory `UI-24` and related SRS functional module.
 
-# H. Caregiver and Sharing
-
-## Screen 26 — Caregiver Dashboard
+### UI-25 — Mobile biometric and permission setup
 
 ```text
-[MASTER STYLE] หน้า dashboard ผู้ดูแล แสดง patient switcher ด้านบน “คุณแม่สมพร” การ์ดสรุป นัดถัดไป 28 มิ.ย., ยาที่ยังไม่ยืนยัน 1 รายการ, checklist วันนี้ 2/3, ความดันล่าสุด มี alert section ที่เรียงตามความสำคัญ ปุ่มโทรและดูรายละเอียด ใช้โทนดูแล ไม่เหมือนระบบเฝ้าระวัง
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: secure the app and explain device permissions. User role: Patient. Key content/components: biometric toggle, secure storage explanation, notification/camera/mic/location permission cards with purpose and status. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “enable selected”. Secondary action: “not now”. Navigation/context: Phase 2 native setup. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 27 — Invite Caregiver
+Source: `08-ui-guide.md` page inventory `UI-25` and related SRS functional module.
+
+### UI-26 — Health platform/device connection
 
 ```text
-[MASTER STYLE] หน้าเชิญผู้ดูแล เลือกเชิญด้วยเบอร์โทร อีเมล QR code หรือลิงก์ มีช่องชื่อความสัมพันธ์ “ลูกสาว” และวันหมดอายุ optional ปุ่ม “กำหนดสิทธิ์ต่อไป” พร้อม privacy explanation สั้น
+[MASTER STYLE]
+Create 390×844 mobile app screen. Objective: connect HealthKit/Health Connect or approved device with scoped consent. User role: Patient. Key content/components: source cards, data types, import range, permission summary, disconnect control, source and last sync. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “connect”. Secondary action: “learn more”. Navigation/context: Phase 2 integration. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
-## Screen 28 — Caregiver Permissions
+Source: `08-ui-guide.md` page inventory `UI-26` and related SRS functional module.
+
+### UI-27 — Admin operational dashboard
 
 ```text
-[MASTER STYLE] หน้ากำหนดสิทธิ์ผู้ดูแล แบ่งกลุ่ม นัดหมาย ยา สุขภาพ เอกสาร เสียง รายงาน SOS ใช้ toggles พร้อมคำอธิบาย เช่น “รับแจ้งเตือนเมื่อยังไม่ยืนยันยา” มี preset “ดูอย่างเดียว” “ผู้ดูแลหลัก” และปุ่ม “บันทึกสิทธิ์” ข้อความผู้ป่วยยกเลิกได้ทุกเวลา
+[MASTER STYLE]
+Create 1440×1024 desktop web. Objective: monitor service health without exposing unnecessary PHI. User role: Admin. Key content/components: system status, queue age, notification errors, security incidents, feature flags, audit/search by pseudonymous reference, no patient clinical details. State: realistic normal state plus one subtle status indicator where relevant. Primary action: “open incident”. Secondary action: “view metrics”. Navigation/context: desktop admin sidebar. Keep Thai labels concise and consistent with Mo-nut terminology. Follow privacy, consent, human-confirmation and safety constraints.
+[NEGATIVE PROMPT]
 ```
 
----
+Source: `08-ui-guide.md` page inventory `UI-27` and related SRS functional module.
 
-# I. Reports and Sharing
+## 7. State variant prompts
 
-## Screen 29 — Create Health Report
+### Loading
 
 ```text
-[MASTER STYLE] หน้าสร้างรายงานสุขภาพ เลือกช่วงเวลา 30 วัน มี checkboxes หมวด ยา ความดัน น้ำหนัก น้ำตาล checklist อาการ คำถาม Preview card แสดงหน้าปกรายงานแบบ professional ปุ่ม “สร้างรายงาน PDF” และข้อความว่าใช้สำหรับประกอบการพบแพทย์ ไม่ใช่การวินิจฉัย
+[MASTER STYLE] Show the Patient Today dashboard in accessible loading state with skeleton cards, stable layout, screen-reader-friendly status label and no fake health values. [NEGATIVE PROMPT]
 ```
 
-## Screen 30 — Secure Share Report
+### Empty
 
 ```text
-[MASTER STYLE] หน้าแชร์รายงานอย่างปลอดภัย มี QR code กลางหน้า ลิงก์ masked วันหมดอายุ 7 วัน ตัวเลือกต้องใช้รหัสผ่าน จำกัดจำนวนครั้งเปิด และปุ่ม “คัดลอกลิงก์” “แชร์” “ยกเลิกลิงก์” มี security badge และข้อความ “คุณควบคุมการเข้าถึงได้”
+[MASTER STYLE] Show an empty appointment list for a new patient, friendly explanation, one clear “เพิ่มนัดหมาย” action and Quick Capture shortcut; no guilt or alarming imagery. [NEGATIVE PROMPT]
 ```
 
-## Screen 31 — Doctor Shared Report View — Desktop
+### Permission denied
 
 ```text
-ออกแบบหน้าเว็บ desktop สำหรับแพทย์ของ Mo-nut สไตล์เดียวกับ [MASTER STYLE] แต่เป็น professional clinical portal ขนาด 1440x1024 sidebar ซ้าย หน้าสรุปผู้ป่วยที่แชร์ข้อมูล มี profile summary, allergies banner, current medications table, blood pressure and glucose charts, medication adherence 30 days, checklist progress, prepared questions, access-expiry indicator และ audit notice ใช้ข้อมูลตัวอย่าง ไม่แสดงเลขบัตรหรือข้อมูลจริง สะอาด อ่านเร็ว เหมาะสำหรับนำเสนอคลินิก
+[MASTER STYLE] Show a caregiver attempting to open a section not granted by the patient. Do not reveal hidden data; explain that permission is unavailable and provide “ขอสิทธิ์จากผู้ป่วย” action. [NEGATIVE PROMPT]
 ```
 
----
-
-# J. SOS and Emergency
-
-## Screen 32 — SOS Confirmation
+### Dependency error
 
 ```text
-[MASTER STYLE] หน้า SOS confirmation เน้นสีแดงเฉพาะปุ่มหลัก มีข้อความใหญ่ “ต้องการขอความช่วยเหลือหรือไม่” เลือกโทรหมายเลขฉุกเฉิน โทรผู้ดูแลหลัก หรือส่งตำแหน่ง มี countdown ยกเลิก 5 วินาที ปุ่มโทรออกชัดเจน ข้อความ “Mo-nut ไม่ใช่ศูนย์บริการฉุกเฉิน” และปุ่มยกเลิกที่เห็นง่าย
+[MASTER STYLE] Show OCR provider unavailable after upload, preserving the original file safely, with “ลองอีกครั้ง” and “กรอกข้อมูลเอง” actions and no data loss implication. [NEGATIVE PROMPT]
 ```
 
-## Screen 33 — SOS Active
+### Offline
 
 ```text
-[MASTER STYLE] หน้า SOS กำลังทำงาน มี status “ส่งแจ้งเตือนให้ผู้ดูแลแล้ว” แผนที่ตำแหน่งปัจจุบัน รายชื่อผู้ติดต่อและสถานะรับทราบ ปุ่ม “โทรซ้ำ” “เปิดเสียงขอความช่วยเหลือ” และปุ่มใหญ่ “ฉันปลอดภัยแล้ว” แสดงเวลาที่เริ่มเหตุการณ์ ไม่แสดง animation รุนแรง
+[MASTER STYLE] Show offline Patient Today dashboard with cached appointment/medicine, clear last-synced timestamp, queued action badge and no claim that SOS data was sent. [NEGATIVE PROMPT]
 ```
 
-## Screen 34 — Emergency Profile
+### Success
 
 ```text
-[MASTER STYLE] หน้า Emergency Profile ที่อ่านได้เร็ว มีชื่อ รูปเล็ก กรุ๊ปเลือด O+ โรคประจำตัว แพ้ยา ยาสำคัญ ผู้ติดต่อฉุกเฉิน QR code และปุ่มโทร การ์ดแต่ละส่วนมี icon ชัด โหมด offline badge ด้านบน ไม่มีเมนูซับซ้อน
+[MASTER STYLE] Show a subtle success confirmation after saving a reviewed appointment, including next reminder summary and caregiver notification setting; avoid celebratory clutter. [NEGATIVE PROMPT]
 ```
 
----
+## 8. Responsive variants
 
-# K. Settings and Trust
+- Mobile: 390×844, bottom navigation, single column
+- Tablet: 1024×1366, list/detail split when useful
+- Desktop Doctor Lite/Admin: 1440×1024, side navigation, constrained content width and logical reading order
 
-## Screen 35 — Privacy and Consent Center
+## 9. Presentation composites
+
+### Two-phase product journey board
 
 ```text
-[MASTER STYLE] หน้า “ความเป็นส่วนตัวและการยินยอม” แสดง cards ผู้ดูแลที่เข้าถึงข้อมูล ลิงก์รายงานที่ยัง active การใช้ OCR/เสียง/AI ตำแหน่ง และประวัติการเข้าถึงล่าสุด มีปุ่มยกเลิกสิทธิ์และดาวน์โหลดข้อมูล ใช้ภาษาง่าย โปร่งใส ไม่เหมือนเอกสารกฎหมายยาว
+[MASTER STYLE] Create a clean 16:9 presentation board comparing Phase 1 Mobile-first PWA and Phase 2 Cross-platform Mobile App. Show the same patient account/data flowing through one API/backend, with Phase 1 browser screens and Phase 2 native notification, biometric and offline capabilities. Use simple architecture arrows, not technical code. [NEGATIVE PROMPT]
 ```
 
-## Screen 36 — Notification Settings
+### Patient-caregiver-clinician ecosystem
 
 ```text
-[MASTER STYLE] หน้าตั้งค่าการแจ้งเตือน แบ่ง นัดหมาย ยา checklist caregiver SOS มี toggles เวลาสงบ 21:00–06:00 และตัวเลือก “ซ่อนชื่อยาและข้อมูลสุขภาพบนหน้าจอล็อก” มี status ตรวจว่า notification permission เปิดอยู่หรือไม่
+[MASTER STYLE] Create a 16:9 ecosystem overview with a fictional elderly patient at the center, caregiver and consent-scoped clinician connected through Mo-nut. Visualize appointment, medication, health trends, reports and SOS, while emphasizing patient-controlled consent. [NEGATIVE PROMPT]
 ```
 
----
-
-# L. Investor / Client Presentation Composite Images
-
-## Composite 01 — Patient Journey Board
+### Critical journey storyboard
 
 ```text
-สร้าง presentation board ขนาด 16:9 สำหรับแอป Mo-nut วาง smartphone mockups 5 เครื่องเรียงเป็น user journey: Today Dashboard, Scan Appointment OCR, Medication Due, Doctor Visit Mode, Health Report ใช้พื้นหลังสว่าง เรียบ premium มีหัวข้อ “จากใบนัด สู่การดูแลต่อเนื่อง” และลูกศรเชื่อม workflow ใช้ UI consistent ตาม [MASTER STYLE] เหมาะสำหรับ pitch deck ลูกค้าและนักลงทุน
+[MASTER STYLE] Create a six-panel 16:9 storyboard: capture appointment image, review OCR, receive reminder, prepare questions, Doctor Visit Mode, create checklist/next appointment. Consistent device frame and fictional data. [NEGATIVE PROMPT]
 ```
 
-## Composite 02 — Connected Care Ecosystem
+## 10. Consistency checklist
 
-```text
-สร้างภาพนำเสนอ 16:9 แสดง ecosystem ของ Mo-nut มี smartphone ผู้ป่วยตรงกลาง, caregiver dashboard ทางซ้าย, doctor portal ทางขวา เชื่อมด้วยเส้นข้อมูลที่ปลอดภัย รอบ ๆ มี icon นัดหมาย ยา ค่าสุขภาพ checklist รายงาน และ SOS ใช้สี teal/blue สะอาด professional ไม่มีภาพโรงพยาบาลจริง มีข้อความไทย “ผู้ป่วย • ผู้ดูแล • บุคลากรทางการแพทย์”
-```
+- [ ] Same fictional patient/facility/medicine across screens
+- [ ] Same teal/amber/red semantics and typography scale
+- [ ] Same bottom navigation labels and selected states
+- [ ] Caregiver always sees active patient context
+- [ ] OCR/STT/AI always shows source/review status
+- [ ] Consent shows purpose, scope and expiry
+- [ ] SOS shows actual per-channel status
+- [ ] No diagnosis, medication adjustment or real brand/PII
+- [ ] Loading/empty/error/offline/denied states included
+- [ ] Thai text corrected in design tool
 
-## Composite 03 — Elderly-friendly Design
+## 11. Recommended presentation set
 
-```text
-สร้างภาพ pitch 16:9 แสดงผู้สูงอายุชาวไทยกำลังใช้แอป Mo-nut บนสมาร์ตโฟน พร้อม enlarged UI callouts ของปุ่มใหญ่ รูปยา ตัวอักษรใหญ่ และการแจ้งเตือนที่เข้าใจง่าย บรรยากาศบ้านอบอุ่น ลูกสาวผู้ดูแลอยู่ข้าง ๆ สไตล์ realistic commercial healthcare photography ผสม UI overlay ที่คมชัด ไม่มีโลโก้แบรนด์อื่น
-```
-
-## Consistency Checklist ก่อนนำเสนอ
-
-- [ ] สี primary และ typography เหมือนกันทุกภาพ
-- [ ] Bottom navigation และ icon set เหมือนกัน
-- [ ] ชื่อผู้ป่วยตัวอย่างเดียวกันและไม่มีข้อมูลจริง
-- [ ] ข้อความภาษาไทยสั้น อ่านชัด
-- [ ] ไม่แสดง diagnosis หรือ AI advice ที่เกินขอบเขต
-- [ ] SOS ใช้สีแดงเฉพาะ emergency
-- [ ] หน้าผู้ดูแลแสดง permission-based care ไม่ใช่ surveillance
-- [ ] ใส่ disclaimer ที่เหมาะสมในหน้าสุขภาพ/SOS
-
-## Recommended Presentation Set
-
-สำหรับ Pitch 8–10 หน้า ให้สร้างภาพอย่างน้อย:
-
-1. Composite 02 — Ecosystem
-2. Screen 05 — Patient Today Dashboard
-3. Screen 10 — OCR Review
-4. Screen 15 — Medication Due
-5. Screen 20 — Doctor Visit Mode
-6. Screen 24 — Checklist
-7. Screen 26 — Caregiver Dashboard
-8. Screen 11 — Travel Plan
-9. Screen 32/33 — SOS
-10. Screen 31 — Doctor Shared Report View
+1. UI-03 Patient Today dashboard
+2. UI-07 OCR review
+3. UI-11 Dose response
+4. UI-16 Caregiver permission
+5. UI-17 Caregiver dashboard
+6. UI-08 Doctor Visit Mode
+7. UI-20 SOS status
+8. UI-23 Doctor Lite summary
+9. Two-phase product journey board

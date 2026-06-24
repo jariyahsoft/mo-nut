@@ -1,157 +1,151 @@
 # 00 — Project Overview
 
-**Project:** หมอนัด (Mo-nut)  
-**Source:** `mo-nut-PRD-mobile-first-PWA.md` v1.1 และ `mo-nut-SRS-mobile-first-PWA.md` v1.0 (24 มิถุนายน 2026)
+> **Source:** `mo-nut-SRS-two-phase.md` เวอร์ชัน 1.0, วันที่ 24 มิถุนายน 2026. เอกสารนี้ต้องอ่านร่วมกับไฟล์อื่นใน `docs/design/`
 
-**MVP Platform:** Web Application แบบ Mobile-first Progressive Web App (PWA); Smartphone เป็นอุปกรณ์หลัก และ Tablet/Desktop เป็นอุปกรณ์รอง
+## 1. Product summary
 
-## Vision
+**หมอนัด (Mo-nut)** เป็น Health Companion และ Chronic Care Management Platform สำหรับการนัดหมาย ยา ข้อมูลสุขภาพ คำแนะนำจากแพทย์ ผู้ดูแล และข้อมูลฉุกเฉิน โดยเน้นผู้สูงอายุและผู้ป่วยโรคเรื้อรัง
 
-ทำให้ผู้ป่วยไม่พลาดนัด ไม่พลาดยา และมีผู้ดูแลช่วยติดตามอย่างเหมาะสม โดยรวมข้อมูลที่จำเป็นต่อการรักษาไว้ในระบบเดียวและให้ผู้ป่วยควบคุมสิทธิ์ข้อมูลของตนเอง
+## 2. Vision
 
-## Problem Statement
+> ทำให้ผู้ป่วยไม่พลาดนัด ไม่พลาดยา และมีผู้ดูแลช่วยติดตามอย่างเหมาะสม โดยผู้ป่วยยังควบคุมข้อมูลของตนเอง
 
-ผู้ป่วยโรคเรื้อรังและผู้สูงอายุมักมีนัดหลายครั้ง ใช้ยาหลายชนิด จำคำแนะนำได้ไม่ครบ และมีข้อมูลสุขภาพกระจัดกระจาย ผู้ดูแลไม่สามารถติดตามได้ทันเวลา ขณะที่แพทย์ได้รับข้อมูลย้อนหลังไม่ครบถ้วน
+## 3. Problem statement
 
-## Product Goals
+- ผู้ป่วยลืมนัด ทำใบนัดหาย หรือเตรียมตัวไม่ครบ
+- ผู้ป่วยลืมยา จำไม่ได้ว่ากินแล้วหรือยัง และผู้ดูแลไม่เห็นสถานะ
+- ข้อมูลสุขภาพ เอกสาร และคำแนะนำกระจัดกระจาย
+- ผู้ป่วยจำคำถามหรือคำแนะนำหลังพบแพทย์ไม่ได้
+- การแชร์ข้อมูลกับผู้ดูแลหรือบุคลากรทางการแพทย์ขาดขอบเขตและหลักฐาน Consent
+- PWA มีข้อจำกัดด้าน background notification/offline จึงต้องวางทางต่อยอด Mobile App โดยไม่สร้างระบบใหม่
 
-1. ลดการพลาดนัดและการไปสาย
-2. เพิ่มความสม่ำเสมอในการใช้ยา
-3. จัดเก็บใบนัด ยา ค่าสุขภาพ และคำแนะนำอย่างเป็นระบบ
-4. เชื่อมผู้ป่วยกับผู้ดูแลโดยใช้ permission ที่เพิกถอนได้
-5. ช่วยเตรียมข้อมูลและคำถามก่อนพบแพทย์
-6. รองรับการใช้งานของผู้สูงอายุและการทำงานแบบ Offline
-7. เตรียมสถาปัตยกรรมสำหรับ B2B และการเชื่อมสถานพยาบาล
+## 4. Goals
 
-## Non-goals
+1. ส่งมอบ Core Journey บน Mobile-first PWA ได้เร็วและปลอดภัย
+2. ลดความเสี่ยงการพลาดนัดและพลาดยาด้วย reminder/escalation ที่ตรวจสอบได้
+3. ทำให้ข้อมูลสุขภาพและเอกสารอยู่ในโครงสร้างเดียวกัน
+4. ให้ผู้ป่วยกำหนดและถอนสิทธิ์การแชร์ได้
+5. รองรับ Android/iOS ใน Phase 2 ด้วยบัญชีและข้อมูลเดิม
+6. ทำให้ Frontend, Backend และ Mobile พัฒนาขนานกันด้วย API contract
+7. ลด vendor lock-in ด้วย Canonical Model และ Repository Adapter
 
-- วินิจฉัยโรค
-- ปรับ เพิ่ม ลด หรือหยุดยาอัตโนมัติ
-- รับประกันว่าผู้ใช้กินยาจริงจากการกดปุ่ม
-- ทำหน้าที่เป็นศูนย์แพทย์ฉุกเฉิน
-- เชื่อมต่อทุกโรงพยาบาลใน MVP
-- Telemedicine เต็มรูปแบบใน MVP
+## 5. Non-goals
 
-## Target Personas
+- วินิจฉัยโรค สั่งยา หรือเปลี่ยนยาอัตโนมัติ
+- รับประกันการส่งความช่วยเหลือฉุกเฉิน
+- ระบบ HIS/EMR/EHR, e-Prescription, Insurance Claim หรือ National Health Platform เต็มรูปแบบ
+- Telemedicine/Video consultation เต็มรูปแบบ
+- Medical-device certification จนกว่า scope/regulatory assessment จะเปลี่ยน
+- Bluetooth integration ใน Phase 1
 
-### P1 — ผู้ป่วยโรคเรื้อรัง
-ต้องการเตือนนัด ยา และบันทึกค่าความดัน/น้ำตาล ใช้โทรศัพท์เป็นหลัก
+## 6. Target users and personas
 
-### P2 — ผู้สูงอายุ
-ต้องการ UI เรียบง่าย ตัวอักษรใหญ่ ปุ่มใหญ่ และผู้ดูแลช่วยตั้งค่าได้
+| Persona | Need | Risk to design for |
+|---|---|---|
+| ผู้ป่วยสูงอายุ | งานวันนี้ นัด ยา ปุ่มใหญ่ ภาษาง่าย | กดผิด อ่านยาก ลืมขั้นตอน |
+| ผู้ป่วยโรคเรื้อรัง | ติดตามยา นัด ค่าสุขภาพ และรายงาน | ข้อมูลจำนวนมากและ time zone |
+| ผู้ดูแล | ดูหลายผู้ป่วยและรับ escalation | บันทึกผิดคน/เห็นเกินสิทธิ์ |
+| Clinician/Doctor Lite | ดูข้อมูลสรุปที่ผู้ป่วยอนุญาต | Consent หมดอายุ/ความเข้าใจว่าเป็น HIS |
+| Admin/Support | ดูแลระบบโดยข้อมูลขั้นต่ำ | Privilege abuse และ audit gap |
 
-### P3 — ผู้ดูแล
-ต้องติดตามผู้ป่วยหนึ่งคนหรือหลายคน รับแจ้งเตือนพลาดยา นัดหมาย และ SOS
+## 7. Roles and permission summary
 
-### P4 — แพทย์/บุคลากรทางการแพทย์
-ต้องการดูรายงานที่ผู้ป่วยอนุญาตและติดตามข้อมูลระหว่างนัดโดยไม่เพิ่มภาระมากเกินไป
+| Role | Own data | View delegated data | Edit delegated data | Admin scope |
+|---|---:|---:|---:|---:|
+| Patient | Yes | N/A | Yes | No |
+| Caregiver | No | ตาม Consent | ตาม Permission | No |
+| Clinician | No | ตาม Consent/Organization | เฉพาะ action ที่อนุมัติ | No |
+| Organization Staff | No | ตาม Organization policy | ตาม role | จำกัดองค์กร |
+| System Administrator | No | เฉพาะเหตุจำเป็น | ไม่ควรแก้ clinical data | Platform |
+| Support Operator | No | Minimum necessary + ticket | จำกัดมาก | Support only |
 
-### P5 — ผู้ดูแลระบบ/องค์กร
-ต้องจัดการองค์กร การเข้าถึง ระบบความปลอดภัย และสถานะการให้บริการ
+## 8. Core modules
+- **การสมัคร เข้าสู่ระบบ และ Session** — 12 functional requirements
+- **โปรไฟล์ผู้ป่วยและข้อมูลฉุกเฉิน** — 8 functional requirements
+- **นัดหมายและโหมดไปพบแพทย์** — 12 functional requirements
+- **เอกสาร OCR และ Quick Capture** — 10 functional requirements
+- **ผู้ดูแล Consent และการแชร์สิทธิ์** — 10 functional requirements
+- **ยา ตารางยา และ Medication Adherence** — 14 functional requirements
+- **ข้อมูลสุขภาพ อาการ และแนวโน้ม** — 10 functional requirements
+- **เสียง Speech-to-Text และคำแนะนำ** — 8 functional requirements
+- **เช็กลิสต์และคำถามสำหรับแพทย์** — 8 functional requirements
+- **การแจ้งเตือนและ Escalation** — 10 functional requirements
+- **แผนที่ การเดินทาง และสถานที่** — 7 functional requirements
+- **SOS และข้อมูลฉุกเฉิน** — 8 functional requirements
+- **รายงาน การส่งออก และลิงก์แชร์** — 8 functional requirements
+- **เนื้อหาความรู้** — 5 functional requirements
+- **ระบบผู้ดูแลและองค์กร** — 7 functional requirements
+- **Offline และการซิงก์** — 10 functional requirements
+- **AI Governance และ Human Confirmation** — 7 functional requirements
+- **บุคลากรทางการแพทย์และ Doctor Lite** — 10 functional requirements
+- **Dashboard และ Read Model ตามบทบาท** — 8 functional requirements
 
-## Roles and Permission Summary
+## 9. Phase scope
 
-| Role | Capability Summary |
+### Phase 1 — Mobile-first PWA
+
+- Auth, profile, appointment, OCR, medication, health measurement
+- Caregiver/consent, checklist/questions, notification/escalation
+- Doctor Visit Mode, Doctor Lite, reports/share links, SOS
+- Responsive web, web push/in-app notification และ offline outbox แบบจำกัด
+
+### Phase 2 — Cross-platform Mobile App
+
+- Core Journey เทียบเท่า Phase 1
+- Native push/local notification, background task
+- Biometric unlock, secure storage, encrypted local database
+- Deep link, widget, HealthKit/Health Connect และ approved Bluetooth devices ตาม scope
+
+## 10. Roadmap gates
+
+1. **Discovery/Architecture Gate:** ปิด Open Decisions ที่บล็อก Sprint 0
+2. **Contract Gate:** API v1, schemas, permission matrix และ mock server พร้อม
+3. **Phase 1 Pilot Gate:** Core Journey ผ่าน Security/Accessibility/Usability
+4. **Phase 2 Entry Gate:** Pilot usage, no critical integrity issue, migration test และ support policy พร้อม
+5. **Phase 2 Release Gate:** Cross-channel sync, native notification และ store compliance ผ่าน
+
+## 11. Success metrics
+
+SRS ไม่กำหนดตัวเลขธุรกิจสุดท้าย จึงต้องยืนยัน target กับ Product Owner ก่อนใช้งานจริง ตัวชี้วัดที่ต้องเก็บ ได้แก่:
+
+- อัตราสร้างนัดและรับ reminder สำเร็จ
+- อัตราตอบ Dose และอัตรา escalation ที่ส่งสำเร็จ
+- OCR/STT confirmation/correction rate
+- Consent grant/revoke completion time
+- Core Journey completion และ usability error ของผู้สูงอายุ
+- API latency/error, crash-free session, sync conflict และ notification delivery
+- Cross-patient access incident ต้องเป็นศูนย์
+
+## 12. Risks
+
+| Risk | Control |
 |---|---|
-| PATIENT | เจ้าของข้อมูล สร้างและแชร์ข้อมูล กำหนดสิทธิ์ |
-| CAREGIVER | เข้าถึงตาม scope ที่ผู้ป่วยอนุญาต |
-| DOCTOR | ดูหรือเพิ่มข้อมูลตาม consent และ organization scope |
-| ORGANIZATION_ADMIN | จัดการสมาชิกองค์กร ไม่ได้สิทธิ์อ่านข้อมูลสุขภาพโดยอัตโนมัติ |
-| SYSTEM_ADMIN | ดูแลระบบภายใต้ privileged-access workflow |
-| SUPPORT | แก้ปัญหาเชิงบัญชีโดยไม่เปิดข้อมูลสุขภาพเกินจำเป็น |
-| AUDITOR | อ่าน Audit Log ตามสิทธิ์ |
+| Web push ไม่สม่ำเสมอ | capability check, in-app list, fallback และวัด delivery |
+| OCR/STT ผิด | original asset, confidence, review และ human confirmation |
+| Firestore coupling | API-only client, repository adapter, canonical schema |
+| Offline duplicate/conflict | UUID/ULID, idempotency, version และ conflict UI |
+| Permission error | server authorization, policy tests, audit และ threat model |
+| Cloud/AI cost | quota, async queue, compression, budget alert, feature flag |
+| ผู้สูงอายุใช้ยาก | elderly mode, usability test, caregiver-assisted onboarding |
+| SOS ถูกเข้าใจผิด | disclaimer, explicit delivery status และ direct-call fallback |
 
-## Core Modules
+## 13. Assumptions
 
-1. Identity and Access
-2. Patient Profile
-3. Caregiver Relationships and Consent
-4. Appointments and OCR
-5. Medication and Adherence
-6. Health Measurements
-7. Doctor Visit Mode
-8. Audio, Transcript and AI Drafts
-9. Checklists
-10. Questions for Doctor
-11. Map and Travel
-12. SOS and Emergency Profile
-13. Reports and Sharing
-14. Notifications
-15. Admin and Audit
+- ผู้ใช้มี smartphone/browser ที่อยู่ใน support matrix
+- ผู้ป่วยเป็นเจ้าของข้อมูล เว้นแต่มีผู้แทนโดยชอบธรรมตามนโยบาย
+- OCR/STT/AI เป็นเพียง proposed data จนผู้ใช้ยืนยัน
+- Notification, location และ emergency action ขึ้นกับ permission/OS/network
+- Repository layout ใน README เป็นข้อเสนอเริ่มต้น ไม่ใช่ requirement จาก SRS
 
-## MVP Scope
-
-- Responsive Web Application แบบ Mobile-first PWA ใช้งานผ่าน Browser และเพิ่มไว้บนหน้าจอโฮมได้เมื่อ Browser รองรับ
-- TypeScript + React/Next.js (หรือ Framework เทียบเท่า), Web App Manifest, Service Worker และ IndexedDB
-- Firebase Authentication, Firestore, Storage, FCM Web Push และ In-app Notification
-- Appointment CRUD, OCR review และ reminders
-- Medication CRUD, schedules, reminders และ caregiver escalation
-- น้ำหนัก ส่วนสูง ความดัน ชีพจร และน้ำตาล
-- Audio recording และ Speech-to-Text
-- Doctor checklist และ questions
-- Web URL/deep link เปิดแผนที่และ travel-time estimate พร้อม fallback
-- Basic SOS และ Emergency Profile
-- PDF reports และ expiring share links
-- Offline App Shell, cache/sync queue สำหรับ workflow หลัก และสถานะ Online/Offline/Syncing/Failed
-- Admin account operations, Security Auditor search, basic audit and consent records โดย Admin ไม่เห็น PHI เป็นค่าเริ่มต้น
-
-## Out of Scope for MVP
-
-- Native Android/iOS App, native background service, native widget/shortcut และ biometric login แบบ Native
-- Live traffic monitoring แบบต่อเนื่อง
-- Full doctor portal และ hospital workflow
-- Bluetooth medical devices
-- Apple Health / Health Connect
-- LINE/SMS escalation
-- FHIR integration
-- Insurance and payment
-
-## Product Roadmap
-
-### Phase 0 — Discovery and Foundation
-Architecture, contracts, design system, prototype, security review และ Firebase environments
-
-### Phase 1 — MVP
-Mobile-first PWA สำหรับ Patient/Caregiver flows, appointments, medication, measurements, audio, checklist, map, SOS, reports, offline queue และ Web Push
-
-### Phase 2 — Pilot
-Doctor Lite Portal, live traffic, AI summary, LINE/SMS, native app/device integration และ clinic pilot
-
-### Phase 3 — Scale
-Hospital integration, FHIR, remote monitoring, B2B dashboard และ white-label
-
-## Success Metrics
-
-- Activation Rate, First Appointment Time และ First Medication Time
-- Caregiver Invitation Rate และ Notification Permission Rate
-- Dose Event Response Rate และ Appointment Confirmation Rate
-- OCR/STT Success and Correction Rate
-- Offline Sync Success Rate
-- D7/D30 Retention และ Error-free Session Rate
-- ผู้สูงอายุใน UAT ทำงานหลักได้ด้วยตนเองหรือมีความช่วยเหลือเพียงเล็กน้อย
-
-## Major Risks
-
-| Risk | Mitigation |
-|---|---|
-| OCR/STT ผิด | เก็บต้นฉบับ แสดง confidence และให้ผู้ใช้ยืนยัน |
-| Web Push/Background Sync ไม่สม่ำเสมอ | In-app notification, capability/permission check, sync เมื่อเปิดแอป และปุ่ม Sync เอง |
-| Data leakage | API authorization, App Check, encryption, audit |
-| ผู้สูงอายุใช้ยาก | Elderly mode, usability test, caregiver-assisted setup |
-| Vendor lock-in | Repository pattern, provider abstraction, portable IDs |
-| SOS ถูกเข้าใจผิด | คำเตือนชัดเจน โทรตรงได้ และไม่อ้างเป็น emergency service |
-
-## Assumptions
-
-- UI ภาษาไทยเป็นหลักและเก็บเวลาใน UTC
-- Firebase เป็น infrastructure เริ่มต้น ไม่ใช่ domain boundary
-- AI outputs เป็น Draft เท่านั้นจนกว่าผู้ใช้จะยืนยัน
-- Browser capability แตกต่างกันได้ ทุกฟีเจอร์ Camera, Microphone, Geolocation, Web Share, Push และ Background Sync ต้องมี capability detection และ fallback
-
-## Open Questions
-
-1. Browser Support Policy แบบระบุเวอร์ชัน
-2. Provider OCR/STT, Map และ OTP ที่ผ่านการประเมินภาษาไทย ค่าใช้จ่าย และ PDPA
-3. Retention period ของเสียง เอกสาร ตำแหน่ง SOS และ audit logs
-4. ข้อมูล Emergency Profile ที่อนุญาตให้เก็บ Offline และการป้องกันบน Browser
-5. Doctor Lite Portal และกระบวนการยืนยันตัวบุคลากรใน Pilot
+## 14. Open questions
+- [ ] Framework PWA และ Cross-platform Mobile App
+- [ ] Firebase Functions เทียบกับ Cloud Run สำหรับแต่ละ Service
+- [ ] OCR/STT Provider, Region, Data Retention และ Cost
+- [ ] Map Provider และรูปแบบค่าใช้จ่าย
+- [ ] ช่องทางสำรอง SMS/Email/LINE และผู้รับผิดชอบค่าใช้จ่าย
+- [ ] Browser/OS Version ขั้นต่ำ
+- [ ] Retention Period ของเสียง เอกสาร Audit และ Notification Log
+- [ ] Threshold/ข้อความเตือนที่ต้องผ่านผู้เชี่ยวชาญทางการแพทย์
+- [ ] Legal basis/Consent flow สำหรับผู้เยาว์หรือผู้แทนโดยชอบธรรม
+- [ ] SLA ของการถอนสิทธิ์ Data Export และ Account Deletion
+- [ ] รายการ Health/Bluetooth Device ที่อนุมัติใน Phase 2
