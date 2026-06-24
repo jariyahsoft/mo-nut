@@ -1,26 +1,26 @@
 # 12 — AI Prompts for UX/UI Presentation Images
 
 **Purpose:** ใช้สร้างภาพ mockup หน้าจอ Mo-nut สำหรับนำเสนอลูกค้า นักลงทุน และทีมออกแบบ  
-**Source:** PRD/SRS Mo-nut v1.0 และ [08-ui-guide.md](08-ui-guide.md)
+**Source:** `mo-nut-PRD-mobile-first-PWA.md` v1.1, `mo-nut-SRS-mobile-first-PWA.md` v1.0 และ [08-ui-guide.md](08-ui-guide.md)
 
 ## วิธีใช้
 
 1. ใช้ **Master Style Prompt** ร่วมกับ prompt ของแต่ละหน้า
-2. สร้างภาพ mobile ที่อัตราส่วน 9:16 ความละเอียดสูง
-3. ใช้ภาพแบบ “flat app screen” สำหรับนำไปวางในสไลด์ หรือระบุ “inside modern smartphone mockup” เมื่อต้องการภาพนำเสนอ
+2. สร้างภาพ Mobile-first PWA viewport อัตราส่วน 9:16 ความละเอียดสูง โดย UI ต้องดูเป็นเว็บที่ติดตั้งได้ ไม่ใช่ Native App เฉพาะแพลตฟอร์ม
+3. ใช้ภาพแบบ “flat responsive PWA screen” สำหรับนำไปวางในสไลด์ หรือระบุ “inside modern smartphone browser/standalone PWA mockup” เมื่อต้องการภาพนำเสนอ
 4. โมเดลสร้างภาพอาจสะกดภาษาไทยผิด ควรใช้ข้อความสั้นและแก้ text ใน Figma ภายหลัง
 5. สร้างทุกหน้าด้วย seed/style reference เดียวกันเพื่อให้สีและ component สม่ำเสมอ
 
 ## Master Style Prompt
 
 ```text
-ออกแบบหน้าจอแอปสุขภาพมือถือชื่อ “หมอนัด — Mo-nut” สำหรับผู้ป่วยโรคเรื้อรังและผู้สูงอายุ สไตล์ modern healthcare, calm, trustworthy, friendly Thai mobile app, mobile-first, clean white cards on very light warm gray-green background, primary teal #1D7A72, secondary blue #4D7CFE, success green, warning amber, emergency red used only for SOS, Thai-friendly sans-serif typography, large readable text, large rounded buttons, 16px rounded cards, generous spacing, clear icons with text labels, accessible high contrast, no visual clutter, premium polished Figma-quality UI, consistent bottom navigation with วันนี้ นัดหมาย ยา สุขภาพ โปรไฟล์, realistic Thai healthcare content, no hospital brand logo, no copyrighted logos, full screen flat UI, portrait 9:16, high resolution
+ออกแบบหน้าจอ Web Application แบบ Mobile-first Progressive Web App (PWA) ชื่อ “หมอนัด — Mo-nut” สำหรับผู้ป่วยโรคเรื้อรังและผู้สูงอายุ ใช้งานผ่าน smartphone browser หรือ standalone home-screen mode, modern healthcare, calm, trustworthy, friendly Thai responsive web UI, clean white cards on very light warm gray-green background, primary teal #1D7A72, secondary blue #4D7CFE, success green, warning amber, emergency red used only for SOS, Thai-friendly sans-serif typography, large readable text, touch targets at least 44x44 CSS px, large rounded buttons, 16px rounded cards, generous spacing, clear icons with text labels, accessible high contrast, visible online/offline/sync state when relevant, no visual clutter, premium polished Figma-quality UI, consistent bottom navigation with วันนี้ นัดหมาย ยา สุขภาพ โปรไฟล์, safe-area aware, realistic Thai healthcare content, no hospital brand logo, no copyrighted logos, no native-only Android/iOS chrome, full screen flat responsive PWA UI, portrait 9:16, high resolution
 ```
 
 ## Negative Prompt
 
 ```text
-avoid tiny text, avoid dark gloomy hospital style, avoid excessive gradients, avoid neon colors, avoid glassmorphism, avoid clutter, avoid complex medical charts, avoid English-only labels, avoid unrealistic body anatomy, avoid visible personal ID numbers, avoid real patient data, avoid advertisement banners, avoid red as primary color
+avoid tiny text, avoid dark gloomy hospital style, avoid excessive gradients, avoid neon colors, avoid glassmorphism, avoid clutter, avoid complex medical charts, avoid English-only labels, avoid unrealistic body anatomy, avoid visible personal ID numbers, avoid real patient data, avoid advertisement banners, avoid red as primary color, avoid native Android or iOS exclusive controls, avoid desktop-only density, avoid implying push/background capability always works
 ```
 
 ---

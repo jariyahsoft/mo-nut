@@ -1,12 +1,12 @@
 # 05 — Architecture Decision Records
 
-**Source:** SRS Mo-nut v1.0
+**Source:** `mo-nut-SRS-mobile-first-PWA.md` v1.0 (24 มิถุนายน 2026)
 
 ## Decision Status Summary
 
 | ADR | Decision | Status |
 |---|---|---|
-| ADR-001 | Flutter เป็น cross-platform client | Accepted |
+| ADR-001 | Mobile-first Web PWA เป็น MVP client | Accepted |
 | ADR-002 | Firebase เป็น MVP platform | Accepted |
 | ADR-003 | API-first และ server-side data access | Accepted |
 | ADR-004 | Clean Architecture + Repository Pattern | Accepted |
@@ -15,34 +15,35 @@
 | ADR-007 | Offline-first สำหรับ workflow สำคัญ | Accepted |
 | ADR-008 | AI output ต้องเป็น Draft และยืนยันโดยมนุษย์ | Accepted |
 | ADR-009 | Cloud Run vs Functions Gen 2 | Proposed |
-| ADR-010 | Riverpod vs Bloc | Proposed |
-| ADR-011 | Admin portal framework | Proposed |
+| ADR-010 | IndexedDB + Service Worker สำหรับ offline-aware PWA | Accepted |
+| ADR-011 | Doctor Lite/Admin เป็น Web modules แยก role | Accepted |
 
-## ADR-001: Flutter as Cross-platform Client
+## ADR-001: Mobile-first Web PWA as MVP Client
 
 Status: Accepted  
-Date: 2026-06-23
+Date: 2026-06-24
 
 ### Context
-ต้องรองรับ Android, iOS, Web/PWA และลดจำนวน codebase
+MVP ต้องเข้าถึงได้จาก Smartphone Browser ติดตั้งบน Home Screen ได้เมื่อรองรับ และทดสอบความเหมาะสมก่อนลงทุน Native App
 
 ### Decision
-ใช้ Flutter/Dart เป็น client หลักสำหรับ Patient และ Caregiver; Doctor Lite ใช้ Flutter Web ได้ในระยะแรก
+ใช้ TypeScript + React/Next.js หรือ Framework เทียบเท่าเพื่อสร้าง Responsive Mobile-first PWA โดยใช้ Web App Manifest, Service Worker และ IndexedDB
 
 ### Alternatives Considered
-- React Native + React Web
-- Native Android/iOS แยกกัน
+- Flutter Web/cross-platform
+- React Native หรือ Native Android/iOS
+- Web responsive ที่ไม่รองรับ PWA/offline
 
 ### Consequences
-ลด code duplication แต่ต้องทดสอบ web accessibility และ admin data tables เพิ่ม
+Deploy ได้เร็วและไม่ต้องผ่าน App Store แต่ต้องออกแบบ fallback สำหรับ Web Push, Camera, Microphone, Geolocation, Web Share และ Background Sync ที่ต่างกันตาม Browser
 
 ## ADR-002: Firebase as Initial Platform
 
 Status: Accepted  
-Date: 2026-06-23
+Date: 2026-06-24
 
 ### Decision
-ใช้ Firebase Auth, Firestore, Storage, FCM, App Check, Crashlytics และ Emulator Suite ใน MVP
+ใช้ Firebase Auth, Firestore, Storage, FCM Web Push, App Check, Cloud Logging/Error Reporting และ Emulator Suite ใน MVP
 
 ### Consequences
 เริ่มได้เร็ว แต่ต้องป้องกัน vendor lock-in ด้วย architecture ที่กำหนด
@@ -121,27 +122,27 @@ Cloud Run เหมาะกับ long-running API/containers; Functions Gen 2 
 ### Recommendation to Confirm
 Hybrid: Cloud Run สำหรับ API และ workers ที่ควบคุม runtime; Scheduler/Tasks สำหรับ triggers
 
-## ADR-010: Flutter State Management
+## ADR-010: IndexedDB and Service Worker for Offline-aware PWA
 
-Status: Proposed
+Status: Accepted
+Date: 2026-06-24
 
-### Options
-- Riverpod: composable, testable, modern
-- Bloc: explicit events/states, team convention ชัด
+### Decision
+ใช้ IndexedDB สำหรับ cache/sync queue และ Service Worker สำหรับ versioned App Shell/offline fallback โดยไม่พึ่ง Background Sync เพียงช่องทางเดียว ทุก mutation มี `client_mutation_id` และ sync ผ่าน API
 
-### Decision Criteria
-ประสบการณ์ทีม, offline sync complexity, code generation และ onboarding
+### Consequences
+รองรับงานหลักเมื่อเครือข่ายขาดหาย แต่ต้องมี quota handling, cache privacy, account isolation, conflict UI, manual sync และ service-worker update strategy
 
-## ADR-011: Admin Portal Framework
+## ADR-011: Doctor Lite and Admin as Role-separated Web Modules
 
-Status: Proposed
+Status: Accepted
+Date: 2026-06-24
 
-### Options
-- Flutter Web: reuse models/design
-- Next.js: data tables, admin ecosystem, web accessibility
+### Decision
+Doctor Lite และ Admin ใช้ Web routes/modules ที่แยก authorization และ layout จาก Patient/Caregiver PWA; สามารถแยก deployment ภายหลังโดยยังใช้ OpenAPI และ design system ร่วมกัน
 
-### Suggested Boundary
-Flutter สำหรับ Doctor Lite; Next.js เมื่อ Admin Portal มี complex tables/reporting
+### Consequences
+MVP ไม่สร้าง Full Doctor Portal แต่ไม่ปิดทางแยก application เมื่อ data table, compliance หรือ release cadence ซับซ้อนขึ้น
 
 ## ADR Template
 

@@ -1,6 +1,6 @@
 # 09 — Testing Guide
 
-**Source:** SRS Sections 21–25 และ MVP acceptance criteria
+**Source:** `mo-nut-SRS-mobile-first-PWA.md` Sections 10, 12–14, 18–23 และ Appendix A
 
 ## Quality Strategy
 
@@ -16,7 +16,7 @@
 
 - Domain/Application backend: ≥ 80% line coverage และ critical branches 100%
 - Permission, consent, medication schedule, sync conflict: scenario coverage 100%
-- Flutter business controllers/repositories: ≥ 80%
+- Frontend application/offline-sync logic: ≥ 80%
 - UI snapshot/golden ใช้เฉพาะ component สำคัญ ไม่แทน behavior tests
 
 ## Unit Test Scope
@@ -37,7 +37,7 @@
 
 - Form validation
 - State transitions loading/error/offline/sync
-- Local notification scheduling IDs
+- PWA install/update state, Web Push subscription state และ sync queue transitions
 - Mapping API DTO ↔ domain/local models
 - Accessibility labels where testable
 
@@ -59,14 +59,14 @@
 
 - OpenAPI schema validation ใน CI
 - Backend responses validate against contract
-- Generated Flutter client compiles
+- Generated TypeScript web client typechecks/builds
 - Example payloads เป็น executable fixtures
 - Breaking change detector ป้องกัน accidental removal/type change
 
 ## E2E Critical Flows
 
 ### E2E-AUTH-001
-สมัครผ่านโทรศัพท์ → consent → patient profile → home
+สมัครด้วยอีเมลหรือ Google → verify/consent → patient profile → home
 
 ### E2E-CARE-001
 เชิญผู้ดูแล → accept → view allowed appointment → revoke → access denied
@@ -97,21 +97,23 @@
 
 ## Offline and Sync Tests
 
-- Kill app after local save before sync
+- ปิด tab/browser หลัง local save ก่อน sync แล้วเปิดใหม่
 - Duplicate retry with same idempotency key
 - Clock/timezone differences
 - Edit same record on two devices
 - Permission revoked while device offline
-- App upgrade with pending operations
+- Service Worker/app version upgrade ขณะมี pending operations
 - Server returns conflict/version mismatch
-- Network switches Wi-Fi/mobile/offline repeatedly
+- Network switches online/offline repeatedly และ Background Sync ไม่พร้อม
+- Logout/account switch clears IndexedDB/Cache Storage ตาม policy
+- Storage quota ใกล้เต็มและ temporary upload cleanup
 
 ## Notification Tests
 
-- Permission granted/denied/provisional
-- App foreground/background/terminated
-- Device reboot and local schedule restoration
-- Server + local de-duplication
+- Permission default/granted/denied และ browser unsupported
+- PWA browser tab/standalone, active/background และ reopened
+- Push subscription refresh/expiry และ service-worker update
+- In-app + Web Push de-duplication
 - Quiet hours
 - Lock-screen privacy mode
 - Timezone change
@@ -130,11 +132,13 @@
 - Admin break-glass audit
 - Log/analytics PHI leakage
 - Dependency/SAST/secret scan
+- XSS/CSP, CSRF ตาม auth model, clickjacking และ security headers
+- Service Worker scope/cache poisoning และ Offline PHI leakage
 
 ## Accessibility Tests
 
-- TalkBack and VoiceOver
-- Keyboard navigation for Web
+- Screen reader อย่างน้อยหนึ่งชุดบน Mobile Web และ Desktop Web
+- Keyboard navigation และ visible focus
 - Font scaling up to 200%
 - Contrast audit
 - Touch target size
@@ -150,7 +154,17 @@
 - Report queue throughput
 - OCR/STT concurrent jobs
 - Firestore hot-spot/index behavior
-- App startup and dashboard rendering on low-end Android
+- PWA startup/dashboard: skeleton ≤ 1 วินาทีและข้อมูลหลัก ≤ 3 วินาทีบน low-end Android Browser/เครือข่ายปกติ
+- API mutation ทั่วไป P95 ≤ 1,000 ms และ optimistic dose action UI ≤ 300 ms
+
+## PWA and Browser Compatibility Tests
+
+- Manifest fields, icons, `start_url`, `scope`, standalone/safe-area และ install guidance
+- App Shell offline fallback และ versioned cache cleanup
+- Chrome/Android, Safari/iOS, Edge/Desktop และ Firefox/Desktop ตาม Browser Support Policy
+- Camera/file upload, MediaRecorder/audio upload, Geolocation, Web Share, Web Push และ `tel:` preferred/fallback paths
+- Capability detection ต้องไม่พึ่ง user-agent detection เมื่อหลีกเลี่ยงได้
+- Lighthouse/automated PWA and accessibility scan เป็น baseline ไม่แทน manual/UAT
 
 ## Test Data
 
@@ -163,14 +177,14 @@
 ## CI Commands — Target
 
 ```bash
-flutter analyze
-flutter test
 pnpm lint
 pnpm typecheck
 pnpm test
 pnpm api:validate
 pnpm test:integration
 pnpm test:contract
+pnpm test:e2e
+pnpm build
 ```
 
 ## Manual UAT Checklist
@@ -188,7 +202,7 @@ pnpm test:contract
 
 - Critical/High security defects = 0
 - P0 acceptance tests ผ่านทั้งหมด
-- Crash-free internal beta ตามเกณฑ์ที่กำหนด
+- Error-free sessions และ PWA/browser smoke tests ตามเกณฑ์ที่กำหนด
 - Backup/rollback verified
 - Privacy/legal copy approved
 - Production monitoring and alerts active

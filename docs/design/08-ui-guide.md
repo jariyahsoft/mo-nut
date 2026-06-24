@@ -1,6 +1,6 @@
 # 08 — UX/UI Guide
 
-**Source:** PRD/SRS product design, mobile-first, elderly-friendly และ accessibility requirements
+**Source:** `mo-nut-SRS-mobile-first-PWA.md` Sections 2.2–2.3, 10, 13–16 และ 25
 
 ## Design Vision
 
@@ -14,6 +14,7 @@ Mo-nut ต้องให้ความรู้สึก **อุ่นใจ 
 4. Care without surveillance — แชร์เท่าที่ผู้ป่วยอนุญาต
 5. Safety before automation — AI/OCR ต้องให้ตรวจสอบ
 6. Elderly-friendly by default — ไม่ซ่อนความสามารถสำคัญหลัง gesture ซับซ้อน
+7. Progressive enhancement — ฟีเจอร์หลักยังมีทางไปต่อเมื่อ Browser ไม่รองรับ capability บางอย่าง
 
 ## Information Architecture
 
@@ -28,6 +29,8 @@ Mo-nut ต้องให้ความรู้สึก **อุ่นใจ 
 Quick Capture เป็น floating central action หรือปุ่มเด่นในหน้าวันนี้
 
 SOS เข้าถึงได้จาก header/action menu และ Emergency card โดยต้องกดค้างเพื่อยืนยัน
+
+บน Standalone PWA ต้องรองรับ safe area; บน Browser tab ต้องไม่ซ่อน navigation หรือ action สำคัญหลัง browser chrome
 
 ### Caregiver Navigation
 
@@ -75,6 +78,8 @@ Press and hold → Confirmation with call/send options → Active state → Loca
 - Consent and permissions
 - Create patient profile
 - Accessibility setup
+- PWA install guidance (แสดงเมื่อเหมาะสม ไม่บังคับก่อนใช้งาน)
+- Notification/camera/microphone/location permission education ตามจังหวะใช้งาน
 
 ### Patient
 
@@ -128,7 +133,7 @@ Press and hold → Confirmation with call/send options → Active state → Loca
 ทุก data screen ต้องมี:
 
 - Initial loading skeleton
-- Pull-to-refresh/background sync
+- Refresh action และ sync เมื่อเปิดหน้า/กลับ online
 - Empty state พร้อม action
 - Inline validation
 - Retryable error
@@ -136,6 +141,8 @@ Press and hold → Confirmation with call/send options → Active state → Loca
 - Offline badge และ pending-sync state
 - Success feedback ไม่รบกวน
 - Deleted/revoked/expired state
+- Unsupported browser capability พร้อม fallback ที่ทำต่อได้
+- New version available พร้อม action refresh ที่ไม่ทำให้ pending data หาย
 
 ## Design Tokens — Proposed Assumption
 
@@ -213,9 +220,25 @@ Press and hold → Confirmation with call/send options → Active state → Loca
 - ไม่ stretch card/line length เกินอ่านง่าย
 - Desktop doctor/admin ใช้ table พร้อม accessible responsive fallback
 
+## PWA and Browser Capability UX
+
+| Capability | Preferred | Fallback |
+|---|---|---|
+| Install | Browser install prompt | คำแนะนำ Add to Home Screen โดยเฉพาะ iOS; ใช้ผ่าน Browser ต่อได้ |
+| Camera | `getUserMedia`/capture | เลือกไฟล์ภาพจากเครื่อง |
+| Microphone | MediaRecorder เมื่อรองรับ | อัปโหลดไฟล์เสียง |
+| Web Push | FCM Web Push | In-app notification และ permission guidance |
+| Background Sync | sync เมื่อกลับ online | sync เมื่อเปิด/กลับเข้าแอปและปุ่ม Sync เอง |
+| Web Share | Native share sheet | Copy link/download ตามสิทธิ์ |
+| Geolocation | Browser location permission | กรอก/เลือกตำแหน่งหรือเปิดแผนที่จากที่อยู่ |
+| Emergency call | `tel:` | แสดงหมายเลขให้กด/คัดลอก |
+
+ห้ามขอ permission ทุกชนิดตั้งแต่ onboarding; ขอเมื่อผู้ใช้เริ่ม flow ที่ต้องใช้และอธิบายประโยชน์/ผลเมื่อปฏิเสธ
+
 ## Accessibility
 
-- WCAG AA baseline
+- WCAG 2.2 AA baseline
+- Touch target ขั้นต่ำประมาณ 44×44 CSS px
 - Dynamic type/font scaling 200% โดย task หลักยังสำเร็จได้
 - Screen reader order ตรง visual order
 - ทุก icon มี label
@@ -223,6 +246,7 @@ Press and hold → Confirmation with call/send options → Active state → Loca
 - Color status มี icon+label
 - Haptic เป็นเสริม ไม่ใช่ช่องทางเดียว
 - Motion ลดได้ตาม system preference
+- Keyboard navigation และ visible focus ต้องใช้ได้ทั้ง Mobile/Desktop Web
 
 ## Prototype Priority
 

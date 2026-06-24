@@ -1,7 +1,9 @@
 # 00 — Project Overview
 
 **Project:** หมอนัด (Mo-nut)  
-**Source:** PRD Mo-nut v1.0 และ SRS Mo-nut v1.0
+**Source:** `mo-nut-PRD-mobile-first-PWA.md` v1.1 และ `mo-nut-SRS-mobile-first-PWA.md` v1.0 (24 มิถุนายน 2026)
+
+**MVP Platform:** Web Application แบบ Mobile-first Progressive Web App (PWA); Smartphone เป็นอุปกรณ์หลัก และ Tablet/Desktop เป็นอุปกรณ์รอง
 
 ## Vision
 
@@ -79,21 +81,23 @@
 
 ## MVP Scope
 
-- Cross-platform Android, iOS และ Web/PWA
-- Firebase Authentication, Firestore, Storage และ FCM
+- Responsive Web Application แบบ Mobile-first PWA ใช้งานผ่าน Browser และเพิ่มไว้บนหน้าจอโฮมได้เมื่อ Browser รองรับ
+- TypeScript + React/Next.js (หรือ Framework เทียบเท่า), Web App Manifest, Service Worker และ IndexedDB
+- Firebase Authentication, Firestore, Storage, FCM Web Push และ In-app Notification
 - Appointment CRUD, OCR review และ reminders
 - Medication CRUD, schedules, reminders และ caregiver escalation
 - น้ำหนัก ส่วนสูง ความดัน ชีพจร และน้ำตาล
 - Audio recording และ Speech-to-Text
 - Doctor checklist และ questions
-- Navigation deep link และ travel-time estimate
+- Web URL/deep link เปิดแผนที่และ travel-time estimate พร้อม fallback
 - Basic SOS และ Emergency Profile
 - PDF reports และ expiring share links
-- Offline cache/sync สำหรับ workflow หลัก
-- Basic audit and consent records
+- Offline App Shell, cache/sync queue สำหรับ workflow หลัก และสถานะ Online/Offline/Syncing/Failed
+- Admin account operations, Security Auditor search, basic audit and consent records โดย Admin ไม่เห็น PHI เป็นค่าเริ่มต้น
 
 ## Out of Scope for MVP
 
+- Native Android/iOS App, native background service, native widget/shortcut และ biometric login แบบ Native
 - Live traffic monitoring แบบต่อเนื่อง
 - Full doctor portal และ hospital workflow
 - Bluetooth medical devices
@@ -108,30 +112,30 @@
 Architecture, contracts, design system, prototype, security review และ Firebase environments
 
 ### Phase 1 — MVP
-Patient/Caregiver flows, appointments, medication, measurements, audio, checklist, map, SOS และ reports
+Mobile-first PWA สำหรับ Patient/Caregiver flows, appointments, medication, measurements, audio, checklist, map, SOS, reports, offline queue และ Web Push
 
 ### Phase 2 — Pilot
-Doctor Lite Portal, live traffic, AI summary, LINE/SMS, device integration และ clinic pilot
+Doctor Lite Portal, live traffic, AI summary, LINE/SMS, native app/device integration และ clinic pilot
 
 ### Phase 3 — Scale
 Hospital integration, FHIR, remote monitoring, B2B dashboard และ white-label
 
 ## Success Metrics
 
-- ผู้ใช้สร้างนัดแรกและตารางยาแรกได้ภายใน 5 นาที
-- Notification delivery success มากกว่า 95%
-- ผู้ใช้เปิด notification อย่างน้อย 70%
-- ผู้ป่วยเชิญผู้ดูแลอย่างน้อย 40%
-- อัตราพลาดนัดและพลาดยาของกลุ่ม Pilot ลดลง
-- Crash-free sessions ตามเกณฑ์ Production
-- คะแนน usability ของผู้สูงอายุไม่น้อยกว่า 4/5
+- Activation Rate, First Appointment Time และ First Medication Time
+- Caregiver Invitation Rate และ Notification Permission Rate
+- Dose Event Response Rate และ Appointment Confirmation Rate
+- OCR/STT Success and Correction Rate
+- Offline Sync Success Rate
+- D7/D30 Retention และ Error-free Session Rate
+- ผู้สูงอายุใน UAT ทำงานหลักได้ด้วยตนเองหรือมีความช่วยเหลือเพียงเล็กน้อย
 
 ## Major Risks
 
 | Risk | Mitigation |
 |---|---|
 | OCR/STT ผิด | เก็บต้นฉบับ แสดง confidence และให้ผู้ใช้ยืนยัน |
-| Push ไม่ทำงาน | Local notification, permission health check, retry |
+| Web Push/Background Sync ไม่สม่ำเสมอ | In-app notification, capability/permission check, sync เมื่อเปิดแอป และปุ่ม Sync เอง |
 | Data leakage | API authorization, App Check, encryption, audit |
 | ผู้สูงอายุใช้ยาก | Elderly mode, usability test, caregiver-assisted setup |
 | Vendor lock-in | Repository pattern, provider abstraction, portable IDs |
@@ -142,11 +146,12 @@ Hospital integration, FHIR, remote monitoring, B2B dashboard และ white-lab
 - UI ภาษาไทยเป็นหลักและเก็บเวลาใน UTC
 - Firebase เป็น infrastructure เริ่มต้น ไม่ใช่ domain boundary
 - AI outputs เป็น Draft เท่านั้นจนกว่าผู้ใช้จะยืนยัน
+- Browser capability แตกต่างกันได้ ทุกฟีเจอร์ Camera, Microphone, Geolocation, Web Share, Push และ Background Sync ต้องมี capability detection และ fallback
 
 ## Open Questions
 
-1. MVP จะเปิดให้แพทย์มีบัญชีจริง หรือใช้รายงาน/ลิงก์แชร์ก่อน
-2. ประเทศแรกและหมายเลขฉุกเฉินที่ต้องรองรับ
-3. Retention period ของเสียง เอกสาร และ audit logs
-4. Business plan และ quota ของ OCR/STT
-5. ต้องรองรับข้อมูลบัตรประชาชนหรือไม่ — ไม่ควรเก็บถ้าไม่จำเป็น
+1. Browser Support Policy แบบระบุเวอร์ชัน
+2. Provider OCR/STT, Map และ OTP ที่ผ่านการประเมินภาษาไทย ค่าใช้จ่าย และ PDPA
+3. Retention period ของเสียง เอกสาร ตำแหน่ง SOS และ audit logs
+4. ข้อมูล Emergency Profile ที่อนุญาตให้เก็บ Offline และการป้องกันบน Browser
+5. Doctor Lite Portal และกระบวนการยืนยันตัวบุคลากรใน Pilot

@@ -1,6 +1,6 @@
 # 03 — Database Design
 
-**Source:** SRS Sections 12–15 และ database portability requirements
+**Source:** `mo-nut-SRS-mobile-first-PWA.md` Sections 7–8, 10–12, 18 และ 21
 
 ## Design Goals
 
@@ -17,11 +17,13 @@
 {
   "id": "01J...",
   "schemaVersion": 1,
-  "createdAt": "2026-06-23T08:00:00Z",
+  "createdAt": "2026-06-24T08:00:00Z",
   "createdBy": "usr_...",
-  "updatedAt": "2026-06-23T08:00:00Z",
+  "updatedAt": "2026-06-24T08:00:00Z",
   "updatedBy": "usr_...",
   "deletedAt": null,
+  "deletedBy": null,
+  "deleteReason": null,
   "version": 1
 }
 ```
@@ -29,6 +31,7 @@
 - `id`: UUIDv7 หรือ ULID
 - `version`: optimistic concurrency
 - `deletedAt`: soft delete เมื่อ entity มีความสำคัญทางสุขภาพ/กฎหมาย
+- ชื่อ field ในส่วน persistence นี้ใช้ `camelCase`; API/OpenAPI และ Canonical Export ใช้ `snake_case` ตาม SRS โดย mapping อยู่ใน adapter เท่านั้น
 
 ## Core Collections
 
@@ -40,6 +43,7 @@ organizations
 organization_members
 caregiver_invitations
 caregiver_relationships
+caregiver_permissions
 consents
 medical_conditions
 allergies
@@ -49,12 +53,13 @@ appointments
 appointment_reminders
 visit_records
 documents
-document_extractions
-audio_records
-audio_transcripts
+ai_jobs
+recordings
+transcripts
 medications
 medication_schedules
-medication_events
+medication_dose_events
+medication_event_corrections
 medication_inventory_events
 health_measurements
 checklists
@@ -64,6 +69,7 @@ question_answers
 sos_events
 sos_locations
 notification_preferences
+push_subscriptions
 notification_jobs
 notification_deliveries
 reports
@@ -88,7 +94,7 @@ erDiagram
   APPOINTMENT ||--o{ AUDIO_RECORD : records
   PATIENT_PROFILE ||--o{ MEDICATION : uses
   MEDICATION ||--o{ MEDICATION_SCHEDULE : schedules
-  MEDICATION_SCHEDULE ||--o{ MEDICATION_EVENT : generates
+  MEDICATION_SCHEDULE ||--o{ MEDICATION_DOSE_EVENT : generates
   PATIENT_PROFILE ||--o{ HEALTH_MEASUREMENT : records
   PATIENT_PROFILE ||--o{ CHECKLIST : follows
   CHECKLIST ||--o{ CHECKLIST_OCCURRENCE : generates
@@ -204,7 +210,7 @@ Index: `patientId + status`
 
 Portability: PostgreSQL แยก `times` และ `weekdays` เป็น child tables; repository adapter map กลับ domain object
 
-### medication_events
+### medication_dose_events
 
 Append-oriented; ไม่แก้ประวัติ schedule เดิม
 
@@ -228,6 +234,18 @@ Indexes:
 - `patientId + scheduledAt desc`
 - `patientId + status + scheduledAt`
 - `scheduleId + scheduledAt`
+
+### push_subscriptions
+
+เก็บเฉพาะ Web Push subscription ที่ผูกกับ domain user/device, browser capability, `status`, `lastSeenAt` และ expiry/error metadata; endpoint/key material เป็น Restricted/Security data และต้องป้องกันการเข้าถึง ห้ามถือว่า subscription ที่มีอยู่แปลว่า Browser ยังอนุญาต Notification
+
+Index: `userId + status`, `endpointHash unique`
+
+### ai_jobs / recordings / transcripts
+
+- `ai_jobs` ใช้ lifecycle `QUEUED/PROCESSING/NEEDS_REVIEW/COMPLETED/FAILED/RETRYING/CANCELLED`
+- `recordings` เก็บ storage key, consent time, relation และ metadata; ไฟล์ต้นฉบับอยู่ private Storage
+- `transcripts` เก็บข้อความ/segments, `reviewStatus` และเชื่อม `aiJobId`; ผล STT ยังเป็น Draft จนผู้ใช้ยืนยัน
 
 ### health_measurements
 
@@ -301,19 +319,20 @@ Index: `patientId + occurredAt`, `actorUserId + occurredAt`, `resourceType + res
 
 ## Status and Enum Baseline
 
-- Appointment: UPCOMING, CONFIRMED, TRAVELING, ARRIVED, WAITING, COMPLETED, RESCHEDULED, CANCELLED, MISSED
+- Appointment: DRAFT, UPCOMING, CONFIRMED, TRAVELLING, ARRIVED, WAITING, COMPLETED, RESCHEDULED, CANCELLED, MISSED
 - Medication: ACTIVE, STOPPED, COMPLETED
-- Medication Event: SCHEDULED, TAKEN, SNOOZED, SKIPPED, NOT_TAKEN, UNKNOWN
-- OCR/STT: UPLOADED, PROCESSING, REVIEW_REQUIRED, CONFIRMED, FAILED
+- Dose Event: SCHEDULED, DUE, TAKEN, SNOOZED, SKIPPED, MISSED, REPORTED_ISSUE
+- AI Job: QUEUED, PROCESSING, NEEDS_REVIEW, COMPLETED, FAILED, RETRYING, CANCELLED
 - Checklist: DRAFT, ACTIVE, PAUSED, COMPLETED, CANCELLED
-- SOS: CREATED, ACTIVE, RESOLVED, CANCELLED, FAILED
+- Share Link: ACTIVE, EXPIRED, REVOKED, MAX_USAGE_REACHED
+- SOS: INITIATED, CONFIRMED, NOTIFYING, ACTIVE, RESOLVED, PARTIAL_FAILURE, CANCELLED
 
 ## Firestore Rules of Thumb
 
 - ใช้ top-level collections
 - Query ด้วย explicit patientId/organizationId
 - ไม่ใช้ arrays ขนาดใหญ่สำหรับ event history
-- Transaction สำหรับ invitation accept, medication confirm, primary caregiver และ share revoke
+- Transaction สำหรับ invitation accept, dose event final action, primary caregiver และ share revoke
 - Composite indexes เก็บใน version control
 
 ## Retention and Deletion
@@ -339,7 +358,7 @@ Index: `patientId + occurredAt`, `actorUserId + occurredAt`, `resourceType + res
 
 - Automated Firestore export ตาม environment policy
 - Storage lifecycle/versioning ตามความสำคัญ
-- Quarterly restore drill สำหรับ production เมื่อเปิดให้บริการจริง
+- Restore drill อย่างน้อยทุก 6 เดือนหรือก่อน Pilot สำคัญ
 - Backup ต้องเข้ารหัสและจำกัดสิทธิ์
 
 ## Open Questions

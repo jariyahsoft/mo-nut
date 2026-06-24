@@ -1,6 +1,6 @@
 # 02 — Coding Rules
 
-**Source:** SRS architecture, security, portability, accessibility และ testing requirements
+**Source:** `mo-nut-SRS-mobile-first-PWA.md` Sections 3, 9–16, 19–22
 
 ## General Principles
 
@@ -27,18 +27,21 @@
 | Method/variable | camelCase | `patientId` |
 | Constant | UPPER_SNAKE_CASE | `MAX_UPLOAD_BYTES` |
 | File | kebab-case | `create-appointment.use-case.ts` |
-| API JSON field | camelCase | `scheduledStartAt` |
+| API JSON field | snake_case ตาม SRS/OpenAPI | `scheduled_start_at` |
 | DB collection | snake_case plural | `medication_events` |
 
-## Flutter/Dart Rules
+## React/Next.js PWA Rules
 
-- เปิด analyzer rules ที่เข้มงวด
-- ห้ามเรียก Firebase/HTTP โดยตรงจาก Widget
-- Widget แสดงผลและ dispatch intent เท่านั้น
-- ใช้ generated immutable DTO/model เมื่อเหมาะสม
-- ทุก screen ต้องรองรับ loading, empty, error, offline และ permission denied
-- Text ทั้งหมดต้องมาจาก localization resources
-- Business date/time ใช้ UTC ใน model และแปลง timezone ที่ presentation
+- เปิด TypeScript `strict`; หลีกเลี่ยง Client Component เมื่อ Server Component หรือ static output เพียงพอ
+- Component แสดงผลและ dispatch intent; ห้ามเรียก Firebase/Firestore หรือ `fetch` แบบ ad hoc จาก component
+- ใช้ generated OpenAPI client และ runtime validation ที่ trust boundary
+- ใช้ Semantic HTML ก่อน ARIA และต้องรองรับ keyboard, visible focus, screen reader และ zoom/font scaling
+- ทุก data screen ต้องมี loading, empty, retryable error, offline, permission denied และ expired/revoked state ตามบริบท
+- Text ทั้งหมดมาจาก localization resources; ภาษาเริ่มต้น `th-TH`
+- Business date/time ใช้ UTC ใน model และแปลง locale/timezone ที่ presentation
+- Browser API ทุกตัวต้องทำ capability detection และมี fallback โดยไม่พึ่ง user-agent detection
+- Service Worker ห้าม cache response ที่มี PHI โดยอัตโนมัติ และต้องมี version/update/rollback strategy
+- IndexedDB record ต้องผูก account/patient context, มี schema version และ clear-on-logout policy
 
 ## Folder and Module Boundaries
 
@@ -120,12 +123,21 @@ Log ได้:
 
 ## Accessibility
 
-- Touch target อย่างน้อยตาม platform guideline
+- Touch target ขั้นต่ำประมาณ 44×44 CSS px
 - รองรับ font scaling โดย layout ไม่พัง
 - ใส่ semantic label ทุก icon-only button
 - ห้ามสื่อสถานะด้วยสีอย่างเดียว
 - SOS ต้องเด่นแต่ป้องกัน accidental activation
-- Contrast ต้องผ่าน WCAG AA เป็น baseline
+- Contrast และพฤติกรรมโดยรวมต้องเป้าหมาย WCAG 2.2 AA
+
+## PWA and Offline Rules
+
+- Manifest ต้องมี `name`, `short_name`, icons, `theme_color`, `background_color`, `start_url`, `scope` และ `display`
+- Cache name ทุกชุดต้อง versioned; App Shell ใช้ Cache First ส่วน API/PHI ใช้ Network First ตาม policy
+- Offline mutation ทุกตัวมี `client_mutation_id`, retry metadata และ idempotency behavior ที่ตรงกับ API
+- Sync queue ห้าม discard pending item เงียบ ๆ; conflict ต้องแสดงข้อมูล local/server และทางเลือกเมื่อ merge ไม่ปลอดภัย
+- File ชั่วคราวต้องตรวจ quota, แจ้ง progress, retry/resume และล้างหลัง sync สำเร็จตาม policy
+- Logout, account switch และ permission revocation ต้อง invalidate cache/local data ตามนโยบาย
 
 ## Security Coding Checklist
 

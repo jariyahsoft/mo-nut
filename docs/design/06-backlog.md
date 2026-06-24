@@ -1,6 +1,6 @@
 # 06 — Product Backlog
 
-**Source:** PRD/SRS Mo-nut v1.0  
+**Source:** `mo-nut-PRD-mobile-first-PWA.md` v1.1 และ `mo-nut-SRS-mobile-first-PWA.md` v1.0
 Priority: P0 = MVP critical, P1 = Pilot enhancement, P2 = future
 
 ## Epic Summary
@@ -13,13 +13,13 @@ Priority: P0 = MVP critical, P1 = Pilot enhancement, P2 = future
 | E03 | Appointments and OCR | P0 |
 | E04 | Medication and Adherence | P0 |
 | E05 | Health Measurements | P0 |
-| E06 | Visit, Questions and Audio | P0 |
+| E06 | Quick Capture, Visit, Questions and Audio | P0 |
 | E07 | Checklists | P0 |
 | E08 | Map and Travel | P0/P1 |
 | E09 | SOS and Emergency Profile | P0 |
 | E10 | Reports and Sharing | P0 |
-| E11 | Offline, Notifications and Sync | P0 |
-| E12 | Doctor/Admin and Integrations | P1/P2 |
+| E11 | PWA, Offline, Notifications and Sync | P0 |
+| E12 | Admin/Support, Doctor Lite and Integrations | P0/P1/P2 |
 
 ## E00 — Foundation and Contracts
 
@@ -31,7 +31,7 @@ Priority: P0
 Source: SRS Sections 5–6
 
 Acceptance Criteria:
-- [ ] Flutter, backend, packages and infrastructure folders exist
+- [ ] Web PWA, backend, packages and infrastructure folders exist
 - [ ] lint, format, typecheck, test and build commands work
 - [ ] environment template contains no real secrets
 - [ ] CI validates both stacks
@@ -43,19 +43,20 @@ As frontend and backend teams, we want an approved API contract so that implemen
 Acceptance Criteria:
 - [ ] OpenAPI validates
 - [ ] mock server runs
-- [ ] Flutter client generation works
+- [ ] TypeScript web client generation works
 - [ ] standard error examples exist
 - [ ] contract version is visible
 
 ## E01 — Identity and Patient Profile
 
-### US-010: Sign in with Phone or Email
+### US-010: Sign in with Email or Google
 
-As a patient, I want to sign in using phone OTP or email so that I can access the app without complex setup.
+As a patient, I want to sign in using email/password or Google so that I can access the PWA without installing a Native App.
 
 Acceptance Criteria:
-- [ ] Phone OTP flow handles resend/rate limit
-- [ ] Email sign-in works
+- [ ] Email/password sign-up, verification, recovery and sign-in work
+- [ ] Google Sign-In works
+- [ ] Phone OTP is feature-flagged as SHOULD and handles resend/rate limit when enabled
 - [ ] Domain user is created exactly once
 - [ ] Terms/consent version recorded
 
@@ -105,8 +106,9 @@ As a patient, I want to photograph an appointment card so that I do not need to 
 ### US-032: Receive Appointment Reminder
 
 - [ ] Multiple reminder offsets
-- [ ] Local and server notification de-duplicated
-- [ ] Deep link opens appointment
+- [ ] In-app and Web Push notification are scheduled idempotently
+- [ ] HTTPS/relative PWA route opens appointment
+- [ ] Permission/capability state and recovery guidance are visible
 - [ ] Privacy mode hides sensitive content
 
 ## E04 — Medication and Adherence
@@ -146,7 +148,14 @@ As a patient, I want to photograph an appointment card so that I do not need to 
 - [ ] Source recorded
 - [ ] User can correct own record with history/audit as required
 
-## E06 — Visit, Questions and Audio
+## E06 — Quick Capture, Visit, Questions and Audio
+
+### US-059: Quick Capture from Today
+
+- [ ] Opens from Dashboard in one action and shows the active patient context
+- [ ] Supports appointment/medication photo, audio, measurement, symptom, appointment, question and checklist entry points
+- [ ] Camera/microphone use capability detection and file/manual fallbacks
+- [ ] Offline item enters Sync Queue with visible status
 
 ### US-060: Prepare Questions for Appointment
 
@@ -159,7 +168,7 @@ As a patient, I want to photograph an appointment card so that I do not need to 
 
 - [ ] Permission confirmation before recording
 - [ ] Pause/resume/stop
-- [ ] Background upload and progress
+- [ ] Resumable/retryable upload and progress; file upload fallback when recording API is unavailable
 - [ ] Transcript editable while preserving original
 
 ### US-062: Doctor Visit Mode
@@ -229,20 +238,39 @@ Priority: P1
 
 ## E11 — Offline, Notifications and Sync
 
+### US-109: Install and Update PWA
+
+- [ ] Manifest passes installability checks and includes required icons/start URL/scope/display
+- [ ] Service Worker provides versioned App Shell and offline fallback
+- [ ] Install guidance supports normal browser flow and iOS Add to Home Screen
+- [ ] Update flow never traps users on a stale version without a refresh path
+
 ### US-110: Offline Operation Queue
 
 - [ ] Stable operation IDs
 - [ ] Retry with backoff
 - [ ] User sees sync status
 - [ ] Conflict never discards data silently
+- [ ] Queue is isolated per account/patient and logout clears local data per policy
+- [ ] Manual sync works when Background Sync is unavailable
 
 ### US-111: Notification Preferences
 
 - [ ] Per-type toggle
 - [ ] Quiet hours
 - [ ] Lock-screen privacy mode
+- [ ] In-app notification remains baseline when Web Push is unsupported/denied
 
-## E12 — Doctor/Admin and Integrations
+## E12 — Admin/Support, Doctor Lite and Integrations
+
+### US-119: Admin Account and Audit Operations
+
+Priority: P0
+
+- [ ] Admin searches accounts with minimum identifiers and sees no PHI by default
+- [ ] Admin can suspend an account, revoke sessions and view system status
+- [ ] Security Auditor can search audit events by time, actor and resource
+- [ ] Admin, Support and Auditor permissions are distinct; privileged access requires reason and audit
 
 ### US-120: Doctor Lite Shared Report View
 
@@ -252,9 +280,11 @@ Priority: P1
 - [ ] Read-only by default
 - [ ] Patient-controlled scope
 
-### US-121: Health Connect and Apple Health
+### US-121: Native Health Data Integration
 
 Priority: P2
+
+Out of MVP: Apple Health / Health Connect ต้องรอ Native App หรือ integration scope ระยะถัดไป
 
 - [ ] Explicit permissions
 - [ ] Source attribution
@@ -268,6 +298,9 @@ Priority: P2
 - [ ] NFR-004 Backup/restore drill
 - [ ] NFR-005 Database export and migration rehearsal
 - [ ] NFR-006 Cost monitoring and quota alerts
+- [ ] NFR-007 Browser matrix: Chrome/Android, Safari/iOS, Edge/Desktop และ Firefox/Desktop
+- [ ] NFR-008 Dashboard skeleton ≤ 1s, primary data ≤ 3s; common read P95 ≤ 800 ms
+- [ ] NFR-009 PWA installability, Service Worker update, storage quota และ clear-on-logout tests
 
 ## Traceability
 

@@ -1,14 +1,14 @@
 # 01 — Architecture
 
-**Source:** SRS Sections 4–5, 10–19 และข้อกำหนด Cross-platform/Firebase/Database portability
+**Source:** `mo-nut-SRS-mobile-first-PWA.md` Sections 3, 9–13, 20–21 และ 29
 
 ## Architecture Goals
 
-- พัฒนา Mobile/Web จาก codebase ร่วมกัน
+- พัฒนา Web Application แบบ Mobile-first PWA โดยใช้ Progressive Enhancement
 - Frontend และ Backend ทำงานขนานกันผ่าน OpenAPI
 - ใช้ Firebase เพื่อความเร็วของ MVP แต่ลด vendor lock-in
 - แยก Domain Logic, Application Use Cases และ Infrastructure
-- รองรับ Offline-first และ background jobs
+- รองรับ Offline-aware workflows ผ่าน Service Worker, IndexedDB และ Sync Queue โดยไม่สมมติว่า Background Sync ใช้ได้ทุก Browser
 - ปกป้องข้อมูลสุขภาพด้วย server-side authorization
 - รองรับการย้าย Firestore ไป PostgreSQL หรือ MongoDB
 
@@ -16,25 +16,25 @@
 
 | Area | Choice | Rationale |
 |---|---|---|
-| Patient/Caregiver client | Flutter | Android, iOS, Web/PWA จาก codebase เดียว |
-| Doctor/Admin portal | Flutter Web เริ่มต้น; Next.js เป็น option | เลือกตามความซับซ้อนของ data tables |
+| Patient/Caregiver client | TypeScript + React/Next.js หรือ Framework เทียบเท่า | Mobile-first responsive web, SSR/CSR ตามหน้าที่ และ PWA จาก codebase เดียว |
+| Doctor Lite/Admin | Web routes/modules แยกตาม role; deploy แยกได้เมื่อจำเป็น | MVP ยังไม่ใช่ Full Doctor Portal; reuse contract/design system |
 | Backend | NestJS + TypeScript | Modular, DI, validation, OpenAPI |
 | Runtime | Cloud Run หรือ Functions Gen 2 | Managed scale และ Firebase integration |
-| Auth | Firebase Authentication | Phone OTP, email, Google, Apple |
+| Auth | Firebase Authentication | Email/password และ Google เป็น MUST; Phone OTP เป็น SHOULD เมื่อเปิด Provider |
 | Primary DB | Cloud Firestore | MVP speed, managed service |
 | File storage | Cloud Storage | Images, PDF, audio |
-| Push | FCM | Mobile/Web notification |
-| Local DB | Drift/SQLite | Offline queue และ cache |
+| Push | FCM Web Push + In-app | Web Push เป็น capability-dependent และ In-app เป็น baseline |
+| PWA/Local DB | Web App Manifest + Service Worker + IndexedDB | App Shell, controlled cache, offline queue และ per-account data isolation |
 | Contract | OpenAPI 3.1 | Generated clients และ mock server |
 
 ## System Context
 
 ```mermaid
 flowchart LR
-  P[Patient App] --> API[Mo-nut REST API]
-  C[Caregiver App] --> API
-  D[Doctor Portal] --> API
-  A[Admin Portal] --> API
+  P[Patient PWA] --> API[Mo-nut REST API]
+  C[Caregiver PWA] --> API
+  D[Doctor Lite Web] --> API
+  A[Admin Web] --> API
   API --> AUTH[Firebase Auth]
   API --> DOMAIN[Application & Domain Modules]
   DOMAIN --> REPO[Repository Interfaces]
@@ -106,16 +106,17 @@ admin
 ## Frontend Structure
 
 ```text
-lib/
-├── app/
+apps/web/src/
+├── app/                  # routes, layouts, providers
+├── components/           # accessible design system
 ├── core/
-│   ├── api/
+│   ├── api/              # generated OpenAPI client
 │   ├── auth/
-│   ├── database/
-│   ├── design_system/
+│   ├── pwa/              # manifest, service-worker registration
+│   ├── offline/          # IndexedDB, cache policy, sync queue
 │   ├── errors/
-│   ├── localization/
-│   └── sync/
+│   ├── i18n/
+│   └── telemetry/
 └── features/
     ├── appointments/
     ├── medications/
@@ -123,19 +124,19 @@ lib/
     ├── caregivers/
     ├── checklists/
     ├── questions/
-    ├── visit_mode/
+    ├── visit-mode/
     ├── reports/
     └── sos/
 ```
 
-Feature ต้องแยก Presentation, Application/Controller, Domain model และ Data repository implementation
+Feature ต้องแยก UI, application state/use cases, contract mapping และ storage adapter; component ห้ามเรียก Firebase/Firestore โดยตรง
 
 ## Request Flow
 
 ```mermaid
 sequenceDiagram
-  participant UI as Flutter UI
-  participant Repo as Client Repository
+  participant UI as React PWA UI
+  participant Repo as Client Service/Queue
   participant API as Backend API
   participant Use as Use Case
   participant DB as Repository Adapter
@@ -169,14 +170,18 @@ sequenceDiagram
 - Files อยู่ Storage; metadata อยู่ database
 - Audit และ event collections เป็น append-only
 
-## Offline and Sync
+## PWA, Offline and Sync
 
-- Local SQLite เก็บ cache และ pending operations
+- Web App Manifest กำหนด installability, icons, start URL, scope, safe area และ standalone mode
+- Service Worker cache เฉพาะ versioned App Shell และข้อมูลที่นโยบายอนุญาต; PHI ใช้ Network First และ minimize cache
+- IndexedDB แยก cache/pending operations ตาม account และ patient context
 - Optimistic UI สำหรับ medication event และ measurement
-- Append-only command มี idempotency key
+- Offline mutation มี `client_mutation_id`; batch ผ่าน `POST /api/v1/sync/batch` และคืนผลรายรายการ
 - Version field ใช้ optimistic concurrency
 - Permission/account status ใช้ server-wins
 - Conflict ที่อาจสูญเสียข้อมูลต้องให้ผู้ใช้ review
+- Auto-sync เมื่อกลับ online/เปิดแอปเมื่อทำได้ พร้อมปุ่ม Sync เอง; ห้ามพึ่ง Background Sync เพียงช่องทางเดียว
+- Logout ล้าง Offline Data ตามนโยบาย และห้ามล้าง pending item โดยไม่แจ้งผู้ใช้
 
 ## Background Jobs and Events
 
@@ -204,9 +209,9 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-  CDN[Firebase Hosting/CDN] --> Web[Web/PWA]
-  Mobile[Android/iOS] --> LB[HTTPS Endpoint]
-  Web --> LB
+  CDN[Firebase Hosting/CDN] --> PWA[Mobile-first PWA]
+  Browser[Mobile/Tablet/Desktop Browser] --> CDN
+  PWA --> LB[HTTPS Endpoint]
   LB --> Run[Cloud Run / Functions Gen 2]
   Run --> Firestore
   Run --> Storage
@@ -220,8 +225,8 @@ flowchart TB
 
 - Structured JSON logs พร้อม requestId
 - Cloud Monitoring metrics และ alerts
-- Crashlytics สำหรับ Flutter
-- Sentry เป็น option หากต้องการ unified tracing
+- Web error reporting, Core Web Vitals และ service-worker/sync failure metrics
+- Sentry หรือเทียบเท่าเป็น option สำหรับ unified frontend tracing โดยต้อง redact PHI
 - ห้าม log transcript, medication detail, access token หรือ raw PHI
 
 ## Scalability Considerations
@@ -237,7 +242,7 @@ flowchart TB
 
 | Decision | Benefit | Cost/Risk |
 |---|---|---|
-| Flutter | shared code | Web admin tables อาจไม่คล่องเท่า Next.js |
+| Mobile-first PWA | deploy เร็ว ไม่ต้องผ่าน App Store และใช้ codebase เดียว | Browser capability, Web Push และ background execution ไม่สม่ำเสมอ |
 | Firestore | MVP เร็ว | joins/reporting จำกัดและมี migration cost |
 | Backend-only data writes | security/portability | latency และงาน backend เพิ่ม |
 | Offline-first | reliability | conflict/sync complexity |
@@ -245,9 +250,9 @@ flowchart TB
 
 ## Open Technical Decisions
 
-1. Riverpod vs Bloc
+1. React/Next.js baseline และ PWA/service-worker tooling ที่ใช้จริง
 2. Cloud Run vs Functions Gen 2 เป็น default API runtime
-3. Flutter Web vs Next.js สำหรับ Admin Portal
+3. Browser Support Policy และ fallback matrix
 4. Provider สำหรับ OCR/STT และ data residency
 5. Queue implementation: Cloud Tasks, Pub/Sub หรือ combination
 6. Secret field-level encryption scope

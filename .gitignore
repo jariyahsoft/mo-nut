@@ -106,3 +106,6 @@ allure-results/
 
 # Agents
 .agents
+
+# Ignore files
+.ignore

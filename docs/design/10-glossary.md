@@ -1,6 +1,6 @@
 # 10 — Glossary
 
-**Source:** PRD/SRS Mo-nut v1.0
+**Source:** `mo-nut-PRD-mobile-first-PWA.md` v1.1 และ `mo-nut-SRS-mobile-first-PWA.md` v1.0
 
 | Term | Meaning | Notes |
 |---|---|---|
@@ -37,6 +37,11 @@
 | PII | ข้อมูลระบุตัวบุคคล | email, phone ฯลฯ |
 | PDPA | กฎหมายคุ้มครองข้อมูลส่วนบุคคลไทย | legal baseline |
 | PWA | Progressive Web App | web install/offline capability |
+| Web App Manifest | metadata สำหรับชื่อ ไอคอน start URL scope และ display | installability |
+| Service Worker | worker ของ Browser สำหรับ App Shell, offline fallback และ Web Push | ต้อง version/scope/cache อย่างปลอดภัย |
+| IndexedDB | local database ใน Browser | offline store และ sync queue |
+| Sync Queue | คิว mutation ในอุปกรณ์ที่รอส่ง Server | ใช้ client mutation ID |
+| Progressive Enhancement | ใช้ capability ที่ Browser รองรับพร้อม fallback | ห้ามสมมติทุก Browser เท่ากัน |
 | FCM | Firebase Cloud Messaging | push notification |
 | App Check | กลไกตรวจ app/client | ลด abuse |
 | RBAC | Role-based Access Control | ต้องรวม ownership/consent |
@@ -47,19 +52,22 @@
 
 | Permission | Meaning |
 |---|---|
-| appointment.read | ดูนัด |
-| appointment.write | สร้าง/แก้ไขนัด |
-| medication.read | ดูยา |
-| medication.write | แก้ไขยา |
-| medication.alert.receive | รับแจ้งเตือนพลาดยา |
-| health.read | ดูค่าสุขภาพ |
-| health.write | บันทึกค่าสุขภาพ |
-| document.read | ดูเอกสาร |
-| audio.read | ฟังเสียง/อ่าน transcript |
-| checklist.read | ดู checklist |
-| checklist.write | แก้ checklist/ความคืบหน้า |
-| report.download | ดาวน์โหลดรายงาน |
+| appointments.read | ดูนัด |
+| appointments.write | สร้าง/แก้ไขนัด |
+| medications.read | ดูยา |
+| medications.write | แก้ไขยา |
+| medication_events.read | ดูเหตุการณ์ยา |
+| medication_events.write_on_behalf | บันทึกเหตุการณ์ยาแทนผู้ป่วย |
+| health_measurements.read | ดูค่าสุขภาพ |
+| health_measurements.write | บันทึกค่าสุขภาพ |
+| documents.read | ดูเอกสาร |
+| recordings.read | ฟังเสียง/อ่าน transcript |
+| checklists.read | ดู checklist |
+| checklists.write | แก้ checklist/ความคืบหน้า |
+| reports.generate | สร้างรายงาน |
+| reports.read | ดู/ดาวน์โหลดรายงาน |
 | sos.receive | รับ SOS |
+| emergency_profile.read | ดูข้อมูลฉุกเฉินที่อนุญาต |
 
 ## Event Names
 
@@ -78,12 +86,17 @@
 ## Common Error Codes
 
 - `VALIDATION_ERROR`
-- `AUTH_REQUIRED`
-- `PERMISSION_DENIED`
+- `UNAUTHENTICATED`
+- `FORBIDDEN`
 - `CONSENT_REQUIRED`
 - `RESOURCE_NOT_FOUND`
-- `RESOURCE_CONFLICT`
+- `CONFLICT`
+- `VERSION_CONFLICT`
+- `IDEMPOTENCY_CONFLICT`
 - `BUSINESS_RULE_VIOLATION`
 - `RATE_LIMITED`
-- `PROVIDER_FAILED`
-- `SERVICE_UNAVAILABLE`
+- `PROVIDER_UNAVAILABLE`
+- `UPLOAD_INCOMPLETE`
+- `OFFLINE_SYNC_CONFLICT`
+- `ACCOUNT_SUSPENDED`
+- `INTERNAL_ERROR`

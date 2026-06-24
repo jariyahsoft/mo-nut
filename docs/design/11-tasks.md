@@ -1,6 +1,6 @@
 # 11 — Implementation Tasks
 
-**Source:** SRS Mo-nut v1.0  
+**Source:** `mo-nut-SRS-mobile-first-PWA.md` v1.0 (24 มิถุนายน 2026)
 Status: `[ ] todo` `[/] in progress` `[x] done` `[!] blocked`
 
 ## Current Phase
@@ -10,7 +10,7 @@ Phase 0 — Foundation, Contracts and UX Prototype
 ## Workstream A — Repository Foundation
 
 - [ ] A01 Create monorepo folders
-- [ ] A02 Initialize Flutter app and flavor configuration
+- [ ] A02 Initialize TypeScript React/Next.js mobile-first PWA and environment configuration
 - [ ] A03 Initialize NestJS backend
 - [ ] A04 Configure pnpm workspace/tooling
 - [ ] A05 Add format/lint/typecheck/test/build scripts
@@ -30,7 +30,7 @@ Dependencies: none
 - [ ] B06 Define health/checklist/question schemas
 - [ ] B07 Define audio/job/report/SOS schemas
 - [ ] B08 Configure mock server
-- [ ] B09 Configure Flutter generated client
+- [ ] B09 Configure generated TypeScript web API client
 - [ ] B10 Add contract compatibility check
 
 Dependencies: A04
@@ -45,6 +45,7 @@ Dependencies: A04
 - [ ] C06 Configure Emulator Suite
 - [ ] C07 Configure Secret Manager/service accounts
 - [ ] C08 Configure Cloud Logging/Monitoring budgets and alerts
+- [ ] C09 Configure Web Push VAPID/subscription lifecycle and In-app notification baseline
 
 Dependencies: A03
 
@@ -67,6 +68,7 @@ Dependencies: B01–B07, C03
 
 - [ ] E01 Confirm brand name/logo/color direction
 - [ ] E02 Implement typography, spacing, colors and components
+- [ ] E02a Implement responsive shell, safe-area, bottom navigation and standalone/browser layouts
 - [ ] E03 Build Patient Today prototype
 - [ ] E04 Build Appointment scan/OCR prototype
 - [ ] E05 Build Medication due prototype
@@ -76,6 +78,7 @@ Dependencies: B01–B07, C03
 - [ ] E09 Build SOS prototype
 - [ ] E10 Conduct elderly usability test
 - [ ] E11 Revise based on client feedback
+- [ ] E12 Prototype install prompt, permission education, unsupported-capability and sync-conflict states
 
 Use prompts in [12-ui-image-prompts.md](12-ui-image-prompts.md) for concept images before implementation
 
@@ -83,7 +86,7 @@ Use prompts in [12-ui-image-prompts.md](12-ui-image-prompts.md) for concept imag
 
 ### Sprint 1 — Identity/Profile/Caregiver
 
-- [ ] F101 Auth and domain-user bootstrap
+- [ ] F101 Email/password + Google Auth and domain-user bootstrap; Phone OTP behind feature flag
 - [ ] F102 Consent onboarding
 - [ ] F103 Patient profile
 - [ ] F104 Caregiver invite/accept/revoke
@@ -103,12 +106,13 @@ Use prompts in [12-ui-image-prompts.md](12-ui-image-prompts.md) for concept imag
 - [ ] F301 Medication CRUD and image
 - [ ] F302 Schedule engine
 - [ ] F303 Medication event generation
-- [ ] F304 Local notification
+- [ ] F304 In-app notification + FCM Web Push, permission/capability UX and privacy-safe payload
 - [ ] F305 Taken/snooze/skip offline sync
 - [ ] F306 Caregiver escalation
 
 ### Sprint 4 — Health/Checklist/Questions
 
+- [ ] F400 Quick Capture launcher, active-patient context, capability fallbacks and offline queue state
 - [ ] F401 Measurement entry/history/charts
 - [ ] F402 Checklist template/occurrence/progress
 - [ ] F403 Questions and answers
@@ -130,10 +134,12 @@ Use prompts in [12-ui-image-prompts.md](12-ui-image-prompts.md) for concept imag
 - [ ] F604 Accessibility hardening
 - [ ] F605 Security testing
 - [ ] F606 Pilot release checklist
+- [ ] F607 Admin account search/suspend/session revoke and system status
+- [ ] F608 Security Auditor log search and role-separation tests
 
 ## Cross-cutting Tasks
 
-- [ ] X01 Local database and pending operation queue
+- [ ] X01 IndexedDB database, per-account cache and pending operation queue
 - [ ] X02 Sync conflict policies and UI
 - [ ] X03 Notification privacy/quiet hours
 - [ ] X04 Structured logging and request tracing
@@ -141,6 +147,12 @@ Use prompts in [12-ui-image-prompts.md](12-ui-image-prompts.md) for concept imag
 - [ ] X06 Backup/export/restore procedures
 - [ ] X07 Cost dashboard and quota controls
 - [ ] X08 Privacy policy/consent copy legal review
+- [ ] X09 Web App Manifest, install guidance, safe area and standalone mode
+- [ ] X10 Service Worker App Shell/offline fallback, versioned cache and update/rollback flow
+- [ ] X11 Browser capability adapter/fallbacks for camera, microphone, geolocation, share, push and `tel:`
+- [ ] X12 Storage quota, resumable upload and temporary-file cleanup
+- [ ] X13 Browser compatibility matrix and WCAG 2.2 AA automation/manual checks
+- [ ] X14 Logout/account-switch Offline Data clearing and privacy verification
 
 ## Definition of Done per Task
 
@@ -161,7 +173,7 @@ Use prompts in [12-ui-image-prompts.md](12-ui-image-prompts.md) for concept imag
 - [ ] Data export tested
 - [ ] Restore/rollback tested
 - [ ] Monitoring alerts tested
-- [ ] Store privacy declarations completed
+- [ ] Web privacy notice, consent and PWA install/permission guidance approved
 - [ ] SOS disclaimer and emergency numbers verified
 - [ ] Pilot support process ready
 
@@ -172,7 +184,7 @@ Use prompts in [12-ui-image-prompts.md](12-ui-image-prompts.md) for concept imag
 - [ ] Migration/backfill dry run
 - [ ] Feature flags set safely
 - [ ] Secrets and service-account permissions reviewed
-- [ ] Staged rollout enabled
+- [ ] Staged deployment/feature flags enabled
 - [ ] Rollback owner identified
 - [ ] Post-deploy smoke tests
 
@@ -184,3 +196,5 @@ Use prompts in [12-ui-image-prompts.md](12-ui-image-prompts.md) for concept imag
 4. อัปเดต contract ก่อน endpoint/client changes
 5. ทุก AI/OCR result ต้องเป็น Draft จนยืนยัน
 6. เมื่อเสร็จ task ให้อัปเดต status, tests และ ADR ที่เกี่ยวข้อง
+7. MVP เป็น Web App แบบ Mobile-first PWA; ห้ามเพิ่ม Native Android/iOS dependency หรือ native-only requirement
+8. Browser capability ทุกตัวต้องมี detection, fallback และ test ตาม Browser Support Policy
