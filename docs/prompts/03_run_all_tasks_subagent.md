@@ -4,25 +4,15 @@
 
 ## ตั้งค่า Telegram ก่อนรัน Codex
 
-กำหนดค่าเป็น environment variables ใน terminal เดียวกับที่ใช้เปิด Codex โดยไม่เขียน token ลงใน repository
+ส่งค่า `TELEGRAM_BOT_TOKEN` และ `TELEGRAM_CHAT_ID` มาพร้อมคำสั่งเรียก prompt โดยตรง
 
-Ubuntu / Linux:
+ตัวอย่าง:
 
-```bash
-export TELEGRAM_BOT_TOKEN="<BOT_TOKEN>"
-export TELEGRAM_CHAT_ID="<CHAT_ID>"
-codex
+```text
+run prompt docs\prompts\03_run_all_tasks_subagent.md TELEGRAM_BOT_TOKEN="xxxxxxx" TELEGRAM_CHAT_ID="xxxxx"
 ```
 
-Windows PowerShell:
-
-```powershell
-$env:TELEGRAM_BOT_TOKEN="<BOT_TOKEN>"
-$env:TELEGRAM_CHAT_ID="<CHAT_ID>"
-codex
-```
-
-จากนั้นคัดลอกข้อความในส่วน **Prompt to Run** ไปสั่ง main agent โดยระบบจะส่งข้อความเมื่อ task จบแบบ `COMPLETED`, `ALREADY COMPLETE`, `BLOCKED` หรือ `ERROR`
+ถ้าไม่ส่งสองค่านี้มา ระบบจะถือว่า Telegram ถูกปิดสำหรับ run นั้น และยังทำงานต่อได้ตามปกติ
 
 ---
 
@@ -30,6 +20,13 @@ codex
 
 ```text
 Act as the main orchestrator for this repository. Complete every numbered task file under tasks/ by delegating work to the project-scoped custom agents in .codex/agents/.
+
+The user may invoke this prompt in a form like:
+- run prompt docs\prompts\03_run_all_tasks_subagent.md TELEGRAM_BOT_TOKEN="xxxxxxx" TELEGRAM_CHAT_ID="xxxxx"
+
+Interpret that invocation as:
+- telegram_bot_token = the value provided in TELEGRAM_BOT_TOKEN="..."
+- telegram_chat_id = the value provided in TELEGRAM_CHAT_ID="..."
 
 Primary objective:
 - Continue until every feasible task is fully implemented and verified.
@@ -55,7 +52,7 @@ The main agent owns:
 - Ensuring only one subagent is active at any time.
 - Passing concise context and findings between subagents.
 - Integrating results and preventing overlapping writers.
-- Tracking completion and blockers in tasks/tasks-update.md.
+- Tracking completion and blockers in tasks-update.md.
 - Confirming that verification evidence exists before marking a task complete.
 - Sending privacy-safe Telegram notifications from the main agent only.
 - Continuing automatically to the next task.
@@ -69,22 +66,22 @@ Before starting the first task:
 1. Read repository instructions, including all applicable AGENTS.md files, README files, architecture/design rules, and project configuration.
 2. Inspect every numbered file matching tasks/[0-9][0-9]_*.md.
 3. Inspect all agent files under .codex/agents/.
-4. Read tasks/tasks-update.md when it exists.
+4. Read tasks-update.md when it exists.
 5. Build a dependency-aware task queue from each task's Prerequisites section.
 6. Determine completion from repository evidence and verification results, not merely from task numbering or an old progress entry.
 7. Skip a task only when its implementation and Definition of Done are already demonstrably complete; record why it was skipped.
-8. Initialize Telegram notification state by checking whether TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are present and non-empty, without printing, logging, persisting, or exposing their values. Initialize telegram_terminal_keys and the sent/disabled/failed counters.
+8. Initialize Telegram notification state by checking whether TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID were provided in the user invocation and are non-empty, without printing, logging, persisting, or exposing their values. Initialize telegram_terminal_keys and the sent/disabled/failed counters.
 
 Prefer dependency order over filename order. When multiple tasks are ready, choose the lowest numbered task first.
 
 ## Telegram Notifications
 
-Telegram notification support is built into this prompt and must not depend on another repository document. Configuration comes only from these process environment variables:
+Telegram notification support is built into this prompt and must not depend on another repository document. Configuration comes only from the values passed in the user invocation:
 
 - TELEGRAM_BOT_TOKEN
 - TELEGRAM_CHAT_ID
 
-At startup, check only whether both variables are non-empty. Never print their values. Never read Telegram credentials from committed files. Never write their values to source files, tasks/tasks-update.md, command output, logs, commits, summaries, or subagent prompts. Never print the fully expanded API URL because it contains the bot token.
+At startup, check only whether both values are present and non-empty. Never print their values. Never read Telegram credentials from committed files. Never write their values to source files, tasks-update.md, command output, logs, commits, summaries, or subagent prompts. Never print the fully expanded API URL because it contains the bot token.
 
 The main orchestrator owns all notifications. Subagents must not receive Telegram credentials and must not send Telegram messages.
 
@@ -92,7 +89,7 @@ The main orchestrator owns all notifications. Subagents must not receive Telegra
 
 Maintain these values in the main-agent context for the current run:
 
-- telegram_enabled: true only when both environment variables exist and are non-empty.
+- telegram_enabled: true only when both invocation values exist and are non-empty.
 - telegram_terminal_keys: a set of terminal events for which delivery has already been attempted, used to prevent duplicate sends and repeated retries.
 - telegram_sent_count.
 - telegram_disabled_count.
@@ -150,8 +147,8 @@ curl --silent --show-error --fail \
   --retry 1 \
   --retry-delay 2 \
   --request POST \
-  "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-  --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+  "https://api.telegram.org/bot${telegram_bot_token}/sendMessage" \
+  --data-urlencode "chat_id=${telegram_chat_id}" \
   --data-urlencode "text=${TELEGRAM_MESSAGE}" \
   >/dev/null
 
@@ -163,8 +160,8 @@ curl.exe --silent --show-error --fail `
   --retry 1 `
   --retry-delay 2 `
   --request POST `
-  "https://api.telegram.org/bot$env:TELEGRAM_BOT_TOKEN/sendMessage" `
-  --data-urlencode "chat_id=$env:TELEGRAM_CHAT_ID" `
+  "https://api.telegram.org/bot<telegram_bot_token>/sendMessage" `
+  --data-urlencode "chat_id=<telegram_chat_id>" `
   --data-urlencode "text=$env:TELEGRAM_MESSAGE" `
   *> $null
 
@@ -172,10 +169,10 @@ Construct TELEGRAM_MESSAGE in memory from the sanitized fields above. Do not ech
 
 ### Missing configuration or delivery failure
 
-If Telegram configuration is absent:
+If Telegram configuration is absent from the invocation:
 
 1. Set telegram_enabled to false.
-2. Record once in tasks/tasks-update.md that Telegram notifications are disabled because required environment variables are unavailable.
+2. Record once in tasks-update.md that Telegram notifications are disabled because required invocation values are unavailable.
 3. Do not ask the user for credentials.
 4. Continue all tasks normally.
 5. Count each skipped terminal event as disabled for the final summary, without repeatedly writing the same warning.
@@ -185,7 +182,7 @@ If delivery fails because of network, API, authentication, rate limit, missing H
 1. Do not expose credentials or the expanded endpoint.
 2. Capture only a short sanitized reason, such as "HTTP request failed", "authentication rejected", or "network unavailable".
 3. Do not retry more than the single retry configured above.
-4. Record the notification as failed in tasks/tasks-update.md.
+4. Record the notification as failed in tasks-update.md.
 5. Increment telegram_failed_count.
 6. Continue the task queue. Do not classify an otherwise successful task as failed solely because Telegram delivery failed.
 
@@ -269,11 +266,11 @@ For every terminal task result, perform these finalization steps in order:
 1. Determine the final task status and prepare a sanitized notification message.
 2. Send the terminal Telegram notification when telegram_enabled is true, before starting another task.
 3. Capture notification status as sent, disabled, or failed with a sanitized reason.
-4. Update tasks/tasks-update.md with the final task and notification result.
+4. Update tasks-update.md with the final task and notification result.
 5. If the repository is a valid Git repository and local commits are allowed by the active runtime policy, create one focused commit for the completed task. Never combine unrelated tasks in one commit.
 6. Immediately continue to the next dependency-ready task.
 
-Update tasks/tasks-update.md after every task with:
+Update tasks-update.md after every task with:
 
 - Timestamp.
 - Task number, title, and attempt number.
@@ -304,7 +301,7 @@ Never fabricate credentials, legal approval, clinical approval, provider configu
 When a task has a genuine external blocker:
 
 - Complete every safe and testable portion of the task.
-- Record the exact blocker and required owner action in tasks/tasks-update.md.
+- Record the exact blocker and required owner action in tasks-update.md.
 - Mark the task blocked rather than completed.
 - Send one BLOCKED Telegram notification with a short sanitized reason.
 - Continue with other dependency-ready tasks that do not depend on the blocker.
@@ -315,7 +312,7 @@ When an unexpected command, test, worker, reviewer, or orchestration error preve
 - Capture a concise sanitized error summary without secrets, PHI, raw stack traces, or large logs.
 - End the current attempt with status ERROR.
 - Send exactly one ERROR Telegram notification using the current task number and attempt number.
-- Record the error, notification result, and recoverable next action in tasks/tasks-update.md.
+- Record the error, notification result, and recoverable next action in tasks-update.md.
 - Apply safe local recovery in a new attempt when possible; increment the attempt number before retrying.
 - If recovery is not possible, leave the task blocked for a later pass, but do not send an additional BLOCKED notification for the same unchanged failure event.
 - Continue with another dependency-ready task when safe.
@@ -358,7 +355,7 @@ After processing the complete queue, report:
 - Review summary and residual risks.
 - Commits created, when applicable.
 - Telegram notification summary: sent, disabled, and failed counts.
-- Path to tasks/tasks-update.md.
+- Path to tasks-update.md.
 
 Do not claim all tasks are complete when any task remains blocked or unverified.
 ```
