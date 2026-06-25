@@ -1,0 +1,4858 @@
+openapi: 3.1.0
+info:
+  title: Mo-nut API
+  version: 1.0.0-task04
+  summary: Contract-first API for Mo-nut Phase 1 and Phase 2 clients.
+  description: |
+    This OpenAPI 3.1 document defines the canonical HTTP API surface for Mo-nut.
+    Contract payloads intentionally use snake_case for transport consistency across
+    generated clients and offline mutation envelopes.
+servers:
+  - url: https://{environment_host}/api/v1
+    variables:
+      environment_host:
+        default: api.dev.mo-nut.local
+tags:
+  - name: identity
+    description: Session exchange, profile, and session management.
+  - name: patients
+    description: Patient profile and emergency information.
+  - name: consents
+    description: Consent documents and patient consent records.
+  - name: caregivers
+    description: Caregiver invitations, relationships, and active patient context.
+  - name: appointments
+    description: Appointment scheduling, review, and state transitions.
+  - name: medications
+    description: Medication records, schedules, doses, and adherence actions.
+  - name: health
+    description: Health measurements, validation, and summaries.
+  - name: assets
+    description: Upload metadata, OCR, transcription, and draft confirmation.
+  - name: reports
+    description: Report generation and secure share links.
+  - name: notifications
+    description: Notification preferences and privacy-safe push subscriptions.
+  - name: sos
+    description: SOS initiation, status tracking, and emergency profile access.
+  - name: sync
+    description: Offline mutation batching and change feed retrieval.
+security:
+  - bearer_auth: []
+paths:
+  /auth/session/exchange:
+    post:
+      tags: [identity]
+      operationId: exchange_session
+      summary: Exchange an external identity token for a Mo-nut session.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/x_correlation_id"
+        - $ref: "#/components/parameters/x_client_platform"
+        - $ref: "#/components/parameters/x_app_version"
+        - $ref: "#/components/parameters/accept_language"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/session_exchange_request"
+            examples:
+              phone_otp:
+                value:
+                  identity_provider: phone_otp
+                  identity_token: otp_session_01JY5M2A8FQ6J2B4E7PK5W4RDT
+                  device:
+                    device_name: Pixel 8
+                    platform: android
+                    app_version: 0.1.0
+                    locale: th-TH
+      responses:
+        "200":
+          description: Session created and active profile resolved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/session_exchange_response"
+              examples:
+                success:
+                  value:
+                    data:
+                      session:
+                        session_id: ses_01JY5M2H9RQY8MDX6V8P7EXN2X
+                        user_id: usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75
+                        status: active
+                        issued_at: "2026-06-24T14:40:00Z"
+                        expires_at: "2026-06-24T20:40:00Z"
+                        last_seen_at: "2026-06-24T14:40:00Z"
+                        device_name: Pixel 8
+                        platform: android
+                        current: true
+                      me:
+                        user_id: usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75
+                        display_name: Anan Chaiyo
+                        account_status: active
+                        roles: [patient]
+                        active_patient_id: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+                        locale: th-TH
+                        preferences:
+                          font_scale: large
+                          high_contrast_mode: false
+                          notification_privacy: minimal
+                        patient_ids:
+                          - pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+                        security_events:
+                          - event_type: new_device
+                            occurred_at: "2026-06-24T14:40:00Z"
+                            source: android
+                        version: 3
+                    meta:
+                      correlation_id: req_01JY5M2NW7T3TK7SK0G7D81V82
+                      server_time: "2026-06-24T14:40:00Z"
+                      next_cursor: null
+                    error: null
+        "422":
+          $ref: "#/components/responses/validation_failed"
+        "403":
+          $ref: "#/components/responses/suspended_account"
+  /me:
+    get:
+      tags: [identity]
+      operationId: get_me
+      summary: Get the active Mo-nut profile context for the authenticated user.
+      parameters:
+        - $ref: "#/components/parameters/x_correlation_id"
+        - $ref: "#/components/parameters/x_client_platform"
+        - $ref: "#/components/parameters/x_app_version"
+        - $ref: "#/components/parameters/accept_language"
+      responses:
+        "200":
+          description: Active profile context.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/me_response"
+              examples:
+                success:
+                  value:
+                    data:
+                      user_id: usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75
+                      display_name: Anan Chaiyo
+                      account_status: active
+                      roles: [patient]
+                      active_patient_id: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+                      locale: th-TH
+                      preferences:
+                        font_scale: large
+                        high_contrast_mode: false
+                        notification_privacy: minimal
+                      patient_ids:
+                        - pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+                      security_events:
+                        - event_type: session_revoked
+                          occurred_at: "2026-06-23T18:15:00Z"
+                          source: web
+                      version: 3
+                    meta:
+                      correlation_id: req_01JY5M79FY34XVD4X71H3SN0ZV
+                      server_time: "2026-06-24T15:05:00Z"
+                      next_cursor: null
+                    error: null
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/suspended_account"
+    patch:
+      tags: [identity]
+      operationId: patch_me
+      summary: Update user-level locale and accessibility preferences.
+      parameters:
+        - $ref: "#/components/parameters/x_correlation_id"
+        - $ref: "#/components/parameters/x_client_platform"
+        - $ref: "#/components/parameters/x_app_version"
+        - $ref: "#/components/parameters/accept_language"
+        - $ref: "#/components/parameters/if_match"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/patch_me_request"
+            examples:
+              success:
+                value:
+                  locale: th-TH
+                  preferences:
+                    font_scale: extra_large
+                    high_contrast_mode: true
+                    notification_privacy: hidden
+      responses:
+        "200":
+          description: Profile updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/me_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "409":
+          $ref: "#/components/responses/version_conflict"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /me/sessions:
+    get:
+      tags: [identity]
+      operationId: list_sessions
+      summary: List the active and recently revoked sessions for the authenticated user.
+      parameters:
+        - $ref: "#/components/parameters/x_correlation_id"
+      responses:
+        "200":
+          description: Sessions listed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/session_list_response"
+              examples:
+                success:
+                  value:
+                    data:
+                      sessions:
+                        - session_id: ses_01JY5M2H9RQY8MDX6V8P7EXN2X
+                          user_id: usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75
+                          status: active
+                          issued_at: "2026-06-24T14:40:00Z"
+                          expires_at: "2026-06-24T20:40:00Z"
+                          last_seen_at: "2026-06-24T15:10:00Z"
+                          device_name: Pixel 8
+                          platform: android
+                          current: true
+                        - session_id: ses_01JY5M9M69SNXGBKC65A3XVND7
+                          user_id: usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75
+                          status: revoked
+                          issued_at: "2026-06-22T08:00:00Z"
+                          expires_at: "2026-06-22T14:00:00Z"
+                          last_seen_at: "2026-06-22T08:21:00Z"
+                          device_name: iPhone 15
+                          platform: ios
+                          current: false
+                    meta:
+                      correlation_id: req_01JY5M8W2HVXPQWQ8P0DT4E4S4
+                      server_time: "2026-06-24T15:10:00Z"
+                      next_cursor: null
+                    error: null
+        "401":
+          $ref: "#/components/responses/auth_required"
+  /me/sessions/{session_id}/revoke:
+    post:
+      tags: [identity]
+      operationId: revoke_session
+      summary: Revoke one session for the authenticated user.
+      parameters:
+        - $ref: "#/components/parameters/x_correlation_id"
+        - $ref: "#/components/parameters/idempotency_key"
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: ses_01JY5M9M69SNXGBKC65A3XVND7
+      responses:
+        "202":
+          description: Session revoke command accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/command_ack_response"
+              examples:
+                accepted:
+                  value:
+                    data:
+                      command_id: cmd_01JY5M9XQSV5AZSC4XTTXXZG9P
+                      status: accepted
+                      resource_id: ses_01JY5M9M69SNXGBKC65A3XVND7
+                    meta:
+                      correlation_id: req_01JY5M9YWWF3NSVF8RQTTZTS3X
+                      server_time: "2026-06-24T15:11:00Z"
+                      next_cursor: null
+                    error: null
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /consent-documents/{document_key}:
+    get:
+      tags: [consents]
+      operationId: get_consent_document
+      summary: Get the active consent document template for a given key.
+      parameters:
+        - name: document_key
+          in: path
+          required: true
+          schema:
+            type: string
+          example: caregiver_access_v1
+      responses:
+        "200":
+          description: Consent document retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/consent_document_response"
+              examples:
+                success:
+                  value:
+                    data:
+                      document_key: caregiver_access_v1
+                      document_version: 1.0.0
+                      title: Caregiver Access Consent
+                      locale: th-TH
+                      summary: Grant scoped appointment and medication access to a caregiver.
+                      disclosure_text: Access can be revoked at any time and does not allow medication changes without explicit scope.
+                      required_scopes:
+                        - appointment.read
+                        - medication.read
+                        - report.create
+                    meta:
+                      correlation_id: req_01JY5MA6FJ2MSN5YR2Q6B8M6X2
+                      server_time: "2026-06-24T15:12:00Z"
+                      next_cursor: null
+                    error: null
+        "401":
+          $ref: "#/components/responses/auth_required"
+  /patients:
+    get:
+      tags: [patients]
+      operationId: list_patients
+      summary: List the patients available in the active user context.
+      parameters:
+        - $ref: "#/components/parameters/x_correlation_id"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/cursor"
+      responses:
+        "200":
+          description: Patient list retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/patient_list_response"
+              examples:
+                success:
+                  value:
+                    data:
+                      patients:
+                        - patient_id: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+                          display_name: Somjai Chaiyo
+                          birth_date: "1955-02-14"
+                          gender: female
+                          blood_type: O
+                          language: th-TH
+                          font_scale: large
+                          account_owner_user_id: usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75
+                          conditions:
+                            - condition_id: cond_htn
+                              name: Hypertension
+                              status: active
+                              diagnosed_on: "2018-08-11"
+                          allergies:
+                            - allergy_id: alg_penicillin
+                              substance: Penicillin
+                              category: drug
+                              reaction: rash
+                              severity: moderate
+                          emergency_contacts:
+                            - contact_id: emc_malee
+                              name: Malee Chaiyo
+                              relationship: daughter
+                              phone_number: "+66811112222"
+                              priority: 1
+                          record_numbers:
+                            - facility_name: Chiang Mai Heart Center
+                              patient_record_number: HN-240624-001
+                          emergency_card_settings:
+                            share_blood_type: true
+                            share_allergies: true
+                            share_contacts: true
+                          version: 6
+                          created_at: "2026-06-24T14:40:00Z"
+                          updated_at: "2026-06-24T14:50:00Z"
+                    meta:
+                      correlation_id: req_01JY5MAX2AX3QAWZ463Z5A5M0N
+                      server_time: "2026-06-24T15:13:00Z"
+                      next_cursor: null
+                    error: null
+        "401":
+          $ref: "#/components/responses/auth_required"
+    post:
+      tags: [patients]
+      operationId: create_patient
+      summary: Create a patient profile for the authenticated account owner.
+      parameters:
+        - $ref: "#/components/parameters/x_correlation_id"
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/create_patient_request"
+            examples:
+              success:
+                value:
+                  display_name: Somjai Chaiyo
+                  birth_date: "1955-02-14"
+                  gender: female
+                  blood_type: O
+                  language: th-TH
+                  font_scale: large
+                  conditions:
+                    - condition_id: cond_htn
+                      name: Hypertension
+                      status: active
+                      diagnosed_on: "2018-08-11"
+                  allergies:
+                    - allergy_id: alg_penicillin
+                      substance: Penicillin
+                      category: drug
+                      reaction: rash
+                      severity: moderate
+                  emergency_contacts:
+                    - contact_id: emc_malee
+                      name: Malee Chaiyo
+                      relationship: daughter
+                      phone_number: "+66811112222"
+                      priority: 1
+                  record_numbers:
+                    - facility_name: Chiang Mai Heart Center
+                      patient_record_number: HN-240624-001
+      responses:
+        "201":
+          description: Patient profile created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/patient_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "409":
+          $ref: "#/components/responses/version_conflict"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /patients/{patient_id}:
+    get:
+      tags: [patients]
+      operationId: get_patient
+      summary: Get a patient profile and emergency details.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        - $ref: "#/components/parameters/x_correlation_id"
+      responses:
+        "200":
+          description: Patient profile retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/patient_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+    patch:
+      tags: [patients]
+      operationId: patch_patient
+      summary: Update mutable patient profile fields using optimistic concurrency.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        - $ref: "#/components/parameters/x_correlation_id"
+        - $ref: "#/components/parameters/if_match"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/patch_patient_request"
+      responses:
+        "200":
+          description: Patient profile updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/patient_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "409":
+          $ref: "#/components/responses/version_conflict"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /patients/{patient_id}/consents:
+    get:
+      tags: [consents]
+      operationId: list_patient_consents
+      summary: List consent records scoped to a patient.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+      responses:
+        "200":
+          description: Consent records retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/consent_list_response"
+              examples:
+                success:
+                  value:
+                    data:
+                      consents:
+                        - consent_id: cst_01JY5M5A50JQKJQFETR8XFBQ0J
+                          patient_id: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+                          document_key: caregiver_access_v1
+                          document_version: 1.0.0
+                          grantee_type: caregiver
+                          grantee_id: usr_01JY5M590PHYX4VM87QY5PN2S9
+                          purposes:
+                            - appointment_support
+                            - medication_reminders
+                          scopes:
+                            - patient.read
+                            - appointment.write
+                            - medication.read
+                          status: active
+                          accepted_at: "2026-06-24T15:00:00Z"
+                          expires_at: "2027-06-24T15:00:00Z"
+                          version: 1
+                    meta:
+                      correlation_id: req_01JY5MBQSZCJW7XFX0P13KKJBC
+                      server_time: "2026-06-24T15:14:00Z"
+                      next_cursor: null
+                    error: null
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+    post:
+      tags: [consents]
+      operationId: create_patient_consent
+      summary: Create a consent record for a patient.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        - $ref: "#/components/parameters/x_correlation_id"
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/create_consent_request"
+      responses:
+        "201":
+          description: Consent record created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/consent_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "409":
+          $ref: "#/components/responses/version_conflict"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /patients/{patient_id}/caregivers:
+    get:
+      tags: [caregivers]
+      operationId: list_patient_caregivers
+      summary: List caregiver relationships for a patient.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+      responses:
+        "200":
+          description: Caregiver relationships retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/caregiver_relationship_list_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /patients/{patient_id}/caregiver-invitations:
+    post:
+      tags: [caregivers]
+      operationId: create_caregiver_invitation
+      summary: Invite a caregiver to one patient with scoped permissions.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        - $ref: "#/components/parameters/x_correlation_id"
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/create_caregiver_invitation_request"
+            examples:
+              sms_invite:
+                value:
+                  invitation_channel: sms
+                  invitee_contact: "+66817778888"
+                  invitee_display_name: Malee Chaiyo
+                  relationship_role: primary
+                  permission_scopes:
+                    - patient.read
+                    - appointment.write
+                    - medication.read
+                  expires_at: "2026-06-30T15:30:00Z"
+      responses:
+        "201":
+          description: Invitation created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/caregiver_invitation_response"
+              examples:
+                success:
+                  value:
+                    data:
+                      invitation_id: cin_01JY5N1K1CQ0QWS4E0QZBRB7A2
+                      patient_id: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+                      invitation_channel: sms
+                      invitee_contact: "+66817778888"
+                      invitee_display_name: Malee Chaiyo
+                      relationship_role: primary
+                      permission_scopes:
+                        - patient.read
+                        - appointment.write
+                        - medication.read
+                      status: pending
+                      expires_at: "2026-06-30T15:30:00Z"
+                      created_at: "2026-06-24T15:30:00Z"
+                      invitation_token_preview: mn_inv_7b32
+                    meta:
+                      correlation_id: req_01JY5N1QM5THMPE8X03FJ78M4A
+                      server_time: "2026-06-24T15:30:00Z"
+                      next_cursor: null
+                    error: null
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /caregiver-invitations/{invitation_id}/accept:
+    post:
+      tags: [caregivers]
+      operationId: accept_caregiver_invitation
+      summary: Accept a caregiver invitation once.
+      security: []
+      parameters:
+        - name: invitation_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: cin_01JY5N1K1CQ0QWS4E0QZBRB7A2
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/accept_caregiver_invitation_request"
+      responses:
+        "200":
+          description: Invitation accepted and relationship activated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/caregiver_relationship_response"
+              examples:
+                success:
+                  value:
+                    data:
+                      relationship_id: rel_01JY5N23MNM3XGQ3ZQH5CP1ZW8
+                      patient_id: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+                      caregiver_user_id: usr_01JY5N21CVS4SE0WQN7EBA9G7H
+                      caregiver_display_name: Malee Chaiyo
+                      relationship_role: primary
+                      permission_scopes:
+                        - patient.read
+                        - appointment.write
+                        - medication.read
+                      access_status: active
+                      invitation_id: cin_01JY5N1K1CQ0QWS4E0QZBRB7A2
+                      expires_at: null
+                      created_at: "2026-06-24T15:32:00Z"
+                      updated_at: "2026-06-24T15:32:00Z"
+                      version: 1
+                    meta:
+                      correlation_id: req_01JY5N27P7SKM5B3X4NFW3G9CB
+                      server_time: "2026-06-24T15:32:00Z"
+                      next_cursor: null
+                    error: null
+        "409":
+          $ref: "#/components/responses/invitation_already_used"
+        "410":
+          $ref: "#/components/responses/invitation_expired"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /caregiver-invitations/{invitation_id}/revoke:
+    post:
+      tags: [caregivers]
+      operationId: revoke_caregiver_invitation
+      summary: Revoke a pending caregiver invitation.
+      parameters:
+        - name: invitation_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: cin_01JY5N1K1CQ0QWS4E0QZBRB7A2
+        - $ref: "#/components/parameters/idempotency_key"
+      responses:
+        "202":
+          description: Invitation revoke command accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/command_ack_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /me/caregiver-patients:
+    get:
+      tags: [caregivers]
+      operationId: list_caregiver_patients
+      summary: List active patient contexts available to the caregiver.
+      responses:
+        "200":
+          description: Caregiver patient contexts retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/caregiver_patient_list_response"
+              examples:
+                success:
+                  value:
+                    data:
+                      patients:
+                        - patient_id: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+                          display_name: Somjai Chaiyo
+                          relationship_id: rel_01JY5N23MNM3XGQ3ZQH5CP1ZW8
+                          relationship_role: primary
+                          permission_scopes:
+                            - patient.read
+                            - appointment.write
+                            - medication.read
+                          access_status: active
+                    meta:
+                      correlation_id: req_01JY5N2T8T1KPB8VXZ0NYBE60S
+                      server_time: "2026-06-24T15:33:00Z"
+                      next_cursor: null
+                    error: null
+        "401":
+          $ref: "#/components/responses/auth_required"
+  /patients/{patient_id}/appointments:
+    get:
+      tags: [appointments]
+      operationId: list_appointments
+      summary: List appointments for a patient.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/cursor"
+      responses:
+        "200":
+          description: Appointments retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/appointment_list_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+    post:
+      tags: [appointments]
+      operationId: create_appointment
+      summary: Create a new appointment for a patient.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/create_appointment_request"
+      responses:
+        "201":
+          description: Appointment created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/appointment_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /appointments/{appointment_id}:
+    get:
+      tags: [appointments]
+      operationId: get_appointment
+      summary: Get one appointment.
+      parameters:
+        - name: appointment_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: apt_01JY5N37B1H2F01B5SXMCP5SXX
+      responses:
+        "200":
+          description: Appointment retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/appointment_response"
+              examples:
+                success:
+                  value:
+                    data:
+                      appointment_id: apt_01JY5N37B1H2F01B5SXMCP5SXX
+                      patient_id: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+                      scheduled_at: "2026-07-01T02:00:00Z"
+                      timezone: Asia/Bangkok
+                      facility_name: Chiang Mai Heart Center
+                      department: Cardiology
+                      building: Building A
+                      room: "402"
+                      clinician_name: Dr. Wichai Rattanakul
+                      notes: Bring recent blood pressure logs.
+                      status: confirmed
+                      responsible_caregiver_relationship_id: rel_01JY5N23MNM3XGQ3ZQH5CP1ZW8
+                      reminders:
+                        - channel: in_app
+                          minutes_before: 1440
+                        - channel: web_push
+                          minutes_before: 120
+                      preparation_items:
+                        - item_id: prep_fasting
+                          label: Fast for 8 hours before blood draw.
+                          type: fasting
+                      document_links:
+                        - asset_id: ast_01JY5N3CP2G7TPDXKKM53M1Y4Q
+                          label: Referral form
+                      ocr_draft_ref:
+                        draft_id: drf_01JY5N3DP8ZWQC2NTYK3C5X16C
+                        source_asset_id: ast_01JY5N3CP2G7TPDXKKM53M1Y4Q
+                      soft_deleted_at: null
+                      version: 2
+                      created_at: "2026-06-24T15:34:00Z"
+                      updated_at: "2026-06-24T15:36:00Z"
+                    meta:
+                      correlation_id: req_01JY5N3G2GKQ6PGTC433W8R3G4
+                      server_time: "2026-06-24T15:36:00Z"
+                      next_cursor: null
+                    error: null
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+    patch:
+      tags: [appointments]
+      operationId: patch_appointment
+      summary: Update an appointment, including soft-delete metadata.
+      parameters:
+        - name: appointment_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: apt_01JY5N37B1H2F01B5SXMCP5SXX
+        - $ref: "#/components/parameters/if_match"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/patch_appointment_request"
+      responses:
+        "200":
+          description: Appointment updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/appointment_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "409":
+          $ref: "#/components/responses/version_conflict"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /appointments/{appointment_id}/transition:
+    post:
+      tags: [appointments]
+      operationId: transition_appointment
+      summary: Perform an explicit appointment status transition.
+      parameters:
+        - name: appointment_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: apt_01JY5N37B1H2F01B5SXMCP5SXX
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/appointment_transition_request"
+      responses:
+        "200":
+          description: Appointment transitioned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/appointment_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "409":
+          $ref: "#/components/responses/invalid_state_transition"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /patients/{patient_id}/medications:
+    get:
+      tags: [medications]
+      operationId: list_medications
+      summary: List medications for a patient.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+      responses:
+        "200":
+          description: Medications retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/medication_list_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+    post:
+      tags: [medications]
+      operationId: create_medication
+      summary: Create a medication record.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/create_medication_request"
+      responses:
+        "201":
+          description: Medication created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/medication_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /medications/{medication_id}:
+    get:
+      tags: [medications]
+      operationId: get_medication
+      summary: Get a medication record.
+      parameters:
+        - name: medication_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: med_01JY5P0J6NCTN4W45MYX96G4QK
+      responses:
+        "200":
+          description: Medication retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/medication_response"
+              examples:
+                success:
+                  value:
+                    data:
+                      medication_id: med_01JY5P0J6NCTN4W45MYX96G4QK
+                      patient_id: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+                      display_name: Metformin 500 mg tablet
+                      generic_name: Metformin
+                      form: tablet
+                      strength: 500 mg
+                      instructions: Take after meals.
+                      status: active
+                      source: manual
+                      caregiver_note: Daughter confirms evening dose support.
+                      images:
+                        - image_id: img_01JY5P0N2ME8R2TRR7SABH61QY
+                          asset_id: ast_01JY5P0P1FTJ25G2V20HZ4T04J
+                          caption: Front of blister pack
+                      active_schedule_ids:
+                        - sch_01JY5P0R641A2D86XAVZQF5QJ0
+                      inventory:
+                        estimated_remaining_quantity: 24
+                        quantity_unit: tablets
+                      warning_text: Do not change this medication without professional advice.
+                      version: 3
+                      created_at: "2026-06-24T16:00:00Z"
+                      updated_at: "2026-06-24T16:05:00Z"
+                    meta:
+                      correlation_id: req_01JY5P0V0NBF0SGJ9VYX94PA0F
+                      server_time: "2026-06-24T16:05:00Z"
+                      next_cursor: null
+                    error: null
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+    patch:
+      tags: [medications]
+      operationId: patch_medication
+      summary: Update mutable medication fields with optimistic concurrency.
+      parameters:
+        - name: medication_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: med_01JY5P0J6NCTN4W45MYX96G4QK
+        - $ref: "#/components/parameters/if_match"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/patch_medication_request"
+      responses:
+        "200":
+          description: Medication updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/medication_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "409":
+          $ref: "#/components/responses/version_conflict"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /medications/{medication_id}/schedules:
+    get:
+      tags: [medications]
+      operationId: list_medication_schedules
+      summary: List schedules for a medication, including immutable history.
+      parameters:
+        - name: medication_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: med_01JY5P0J6NCTN4W45MYX96G4QK
+      responses:
+        "200":
+          description: Schedules retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/medication_schedule_list_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+    post:
+      tags: [medications]
+      operationId: create_medication_schedule
+      summary: Create a new medication schedule revision.
+      parameters:
+        - name: medication_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: med_01JY5P0J6NCTN4W45MYX96G4QK
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/create_medication_schedule_request"
+      responses:
+        "201":
+          description: Schedule created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/medication_schedule_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /patients/{patient_id}/doses:
+    get:
+      tags: [medications]
+      operationId: list_doses
+      summary: List dose occurrences for a patient.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/cursor"
+      responses:
+        "200":
+          description: Doses retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dose_list_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /doses/{dose_id}/actions:
+    post:
+      tags: [medications]
+      operationId: submit_dose_action
+      summary: Submit an idempotent dose action for one occurrence.
+      description: Repeating the same Idempotency-Key with the same payload returns the original result.
+      parameters:
+        - name: dose_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: dos_01JY5P15W06MZ8A8AQ3QYWQ5J5
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/dose_action_request"
+      responses:
+        "200":
+          description: Dose action applied or returned from idempotency storage.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dose_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "409":
+          $ref: "#/components/responses/idempotency_conflict"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /doses/{dose_id}/corrections:
+    post:
+      tags: [medications]
+      operationId: correct_dose
+      summary: Apply an audited correction to a past dose status.
+      parameters:
+        - name: dose_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: dos_01JY5P15W06MZ8A8AQ3QYWQ5J5
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/dose_correction_request"
+      responses:
+        "200":
+          description: Dose corrected with audit-safe fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dose_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "409":
+          $ref: "#/components/responses/idempotency_conflict"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /patients/{patient_id}/measurements:
+    get:
+      tags: [health]
+      operationId: list_measurements
+      summary: List typed measurements for a patient.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/cursor"
+      responses:
+        "200":
+          description: Measurements retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/measurement_list_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+    post:
+      tags: [health]
+      operationId: create_measurement
+      summary: Create a typed health measurement entry.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/create_measurement_request"
+      responses:
+        "201":
+          description: Measurement created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/measurement_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "422":
+          $ref: "#/components/responses/measurement_validation_error"
+  /measurements/{measurement_id}:
+    get:
+      tags: [health]
+      operationId: get_measurement
+      summary: Get one measurement entry.
+      parameters:
+        - name: measurement_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: msm_01JY5P1J1VGQDZ7AAT2B51RYNT
+      responses:
+        "200":
+          description: Measurement retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/measurement_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+    patch:
+      tags: [health]
+      operationId: patch_measurement
+      summary: Update a measurement entry.
+      parameters:
+        - name: measurement_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: msm_01JY5P1J1VGQDZ7AAT2B51RYNT
+        - $ref: "#/components/parameters/if_match"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/patch_measurement_request"
+      responses:
+        "200":
+          description: Measurement updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/measurement_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "409":
+          $ref: "#/components/responses/version_conflict"
+        "422":
+          $ref: "#/components/responses/measurement_validation_error"
+    delete:
+      tags: [health]
+      operationId: delete_measurement
+      summary: Delete a measurement entry.
+      parameters:
+        - name: measurement_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: msm_01JY5P1J1VGQDZ7AAT2B51RYNT
+      responses:
+        "202":
+          description: Deletion accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/command_ack_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /patients/{patient_id}/measurements/summary:
+    get:
+      tags: [health]
+      operationId: get_measurement_summary
+      summary: Get measurement summary and recent trend metadata.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+      responses:
+        "200":
+          description: Measurement summary retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/measurement_summary_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /patients/{patient_id}/assets:
+    post:
+      tags: [assets]
+      operationId: create_asset_upload
+      summary: Create asset metadata and request a signed upload target.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/create_asset_upload_request"
+      responses:
+        "201":
+          description: Asset metadata created and upload target issued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/asset_upload_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /assets/{asset_id}/ocr-jobs:
+    post:
+      tags: [assets]
+      operationId: create_ocr_job
+      summary: Start an OCR processing job for an uploaded asset.
+      parameters:
+        - name: asset_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: ast_01JY5Q0AXF1FYF2SR2KFK9MJ06
+        - $ref: "#/components/parameters/idempotency_key"
+      responses:
+        "202":
+          description: OCR job accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/processing_job_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "503":
+          $ref: "#/components/responses/provider_failure"
+  /assets/{asset_id}/transcription-jobs:
+    post:
+      tags: [assets]
+      operationId: create_transcription_job
+      summary: Start a transcription job for an uploaded audio asset.
+      parameters:
+        - name: asset_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: ast_01JY5Q0AXF1FYF2SR2KFK9MJ06
+        - $ref: "#/components/parameters/idempotency_key"
+      responses:
+        "202":
+          description: Transcription job accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/processing_job_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+        "503":
+          $ref: "#/components/responses/provider_failure"
+  /processing-jobs/{job_id}:
+    get:
+      tags: [assets]
+      operationId: get_processing_job
+      summary: Get the status of one OCR or transcription job.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: job_01JY5Q0JZQYGRVQXAZD4R7867D
+      responses:
+        "200":
+          description: Job status retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/processing_job_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /processing-drafts/{draft_id}/confirm:
+    post:
+      tags: [assets]
+      operationId: confirm_processing_draft
+      summary: Confirm a reviewed OCR or transcription draft before applying it.
+      parameters:
+        - name: draft_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: drf_01JY5Q0NYW9J5BZ5B2N07HBE0H
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/confirm_processing_draft_request"
+      responses:
+        "200":
+          description: Draft confirmed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/command_ack_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /patients/{patient_id}/reports:
+    post:
+      tags: [reports]
+      operationId: create_report
+      summary: Request asynchronous report generation for selected scopes.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/create_report_request"
+      responses:
+        "202":
+          description: Report job accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/report_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /reports/{report_id}:
+    get:
+      tags: [reports]
+      operationId: get_report
+      summary: Get the current report job status.
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: rpt_01JY5Q1B9W0TWJY0V6WFXB9M4W
+      responses:
+        "200":
+          description: Report status retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/report_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /patients/{patient_id}/share-links:
+    post:
+      tags: [reports]
+      operationId: create_share_link
+      summary: Create an expiring share link for approved report scopes.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/create_share_link_request"
+      responses:
+        "201":
+          description: Share link created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/share_link_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /share-links/{share_link_id}:
+    delete:
+      tags: [reports]
+      operationId: revoke_share_link
+      summary: Revoke a share link immediately.
+      parameters:
+        - name: share_link_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: shl_01JY5Q1KSK9QYQG23N0F5C5S9Y
+      responses:
+        "202":
+          description: Share link revocation accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/command_ack_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /share-links/public/{share_token}:
+    get:
+      tags: [reports]
+      operationId: get_public_share
+      summary: Resolve a public share link token without exposing patient identity when inactive.
+      security: []
+      parameters:
+        - name: share_token
+          in: path
+          required: true
+          schema:
+            type: string
+          example: mn_shr_live_u4F8Pk3qS7
+      responses:
+        "200":
+          description: Shared report access granted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/public_share_response"
+        "410":
+          $ref: "#/components/responses/share_expired"
+        "423":
+          $ref: "#/components/responses/share_revoked"
+  /notification-preferences:
+    get:
+      tags: [notifications]
+      operationId: get_notification_preferences
+      summary: Get privacy-safe notification preferences.
+      responses:
+        "200":
+          description: Notification preferences retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/notification_preferences_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+    patch:
+      tags: [notifications]
+      operationId: patch_notification_preferences
+      summary: Update privacy-safe notification preferences.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/patch_notification_preferences_request"
+      responses:
+        "200":
+          description: Notification preferences updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/notification_preferences_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /push-subscriptions:
+    post:
+      tags: [notifications]
+      operationId: create_push_subscription
+      summary: Register a push subscription without storing detailed PHI in payload definitions.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/create_push_subscription_request"
+      responses:
+        "201":
+          description: Push subscription created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/push_subscription_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /patients/{patient_id}/sos:
+    post:
+      tags: [sos]
+      operationId: create_sos_event
+      summary: Initiate an SOS event with per-channel delivery status.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        - $ref: "#/components/parameters/idempotency_key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/create_sos_request"
+      responses:
+        "202":
+          description: SOS accepted with immediate delivery attempt results.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/sos_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /sos/{sos_id}/close:
+    post:
+      tags: [sos]
+      operationId: close_sos_event
+      summary: Mark an SOS event closed.
+      parameters:
+        - name: sos_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: sos_01JY5Q2AMR5QXJK7W9MKANW1K2
+      responses:
+        "200":
+          description: SOS event closed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/sos_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /patients/{patient_id}/emergency-profile:
+    get:
+      tags: [sos]
+      operationId: get_emergency_profile
+      summary: Get the privacy-controlled emergency profile summary for one patient.
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+      responses:
+        "200":
+          description: Emergency profile retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/emergency_profile_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "403":
+          $ref: "#/components/responses/forbidden_scope"
+  /sync/batch:
+    post:
+      tags: [sync]
+      operationId: sync_batch
+      summary: Submit a batch of offline-safe mutations with independent outcomes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/sync_batch_request"
+      responses:
+        "200":
+          description: Batch processed with partial success, retryability, or conflict outcomes.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/sync_batch_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+        "409":
+          $ref: "#/components/responses/version_conflict"
+        "422":
+          $ref: "#/components/responses/validation_failed"
+  /sync/changes:
+    get:
+      tags: [sync]
+      operationId: get_sync_changes
+      summary: Get incremental changes after a sync cursor.
+      parameters:
+        - $ref: "#/components/parameters/cursor"
+      responses:
+        "200":
+          description: Incremental changes retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/sync_changes_response"
+        "401":
+          $ref: "#/components/responses/auth_required"
+components:
+  securitySchemes:
+    bearer_auth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Application session token or verified bearer token issued by Mo-nut.
+  parameters:
+    x_correlation_id:
+      name: X-Correlation-Id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Optional end-to-end correlation identifier.
+    x_client_platform:
+      name: X-Client-Platform
+      in: header
+      required: false
+      schema:
+        type: string
+        enum: [web, android, ios]
+    x_app_version:
+      name: X-App-Version
+      in: header
+      required: false
+      schema:
+        type: string
+    accept_language:
+      name: Accept-Language
+      in: header
+      required: false
+      schema:
+        type: string
+    idempotency_key:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 8
+    if_match:
+      name: If-Match
+      in: header
+      required: true
+      schema:
+        type: string
+      description: Entity version token used for optimistic concurrency.
+    limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+  responses:
+    auth_required:
+      description: Authentication is required.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error_response"
+          examples:
+            unauthenticated:
+              value:
+                data: null
+                meta:
+                  correlation_id: req_01JY5MBZKDPY2BF3HMM9W3M9S6
+                  server_time: "2026-06-24T15:15:00Z"
+                  next_cursor: null
+                error:
+                  code: AUTH_REQUIRED
+                  message: Authentication is required to access this resource.
+                  fields: []
+    forbidden_scope:
+      description: The authenticated actor lacks the required role, scope, or consent.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error_response"
+          examples:
+            forbidden:
+              value:
+                data: null
+                meta:
+                  correlation_id: req_01JY5MC8X6VK4KRW8EKQ9RPX1Y
+                  server_time: "2026-06-24T15:16:00Z"
+                  next_cursor: null
+                error:
+                  code: FORBIDDEN_SCOPE
+                  message: The active role or consent scope does not permit this action.
+                  fields: []
+    suspended_account:
+      description: The account is suspended and cannot continue.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error_response"
+          examples:
+            suspended:
+              value:
+                data: null
+                meta:
+                  correlation_id: req_01JY5MCJ0M0YG0Y7S58TR2B2S0
+                  server_time: "2026-06-24T15:17:00Z"
+                  next_cursor: null
+                error:
+                  code: ACCOUNT_SUSPENDED
+                  message: This account is suspended and must complete recovery before access is restored.
+                  fields: []
+    validation_failed:
+      description: The payload or domain fields are invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error_response"
+          examples:
+            validation:
+              value:
+                data: null
+                meta:
+                  correlation_id: req_01JY5MCRH2HQXAGCY4EXQJCE1B
+                  server_time: "2026-06-24T15:18:00Z"
+                  next_cursor: null
+                error:
+                  code: VALIDATION_FAILED
+                  message: One or more request fields are invalid.
+                  fields:
+                    - path: /display_name
+                      code: REQUIRED
+                    - path: /emergency_contacts/0/phone_number
+                      code: INVALID_PHONE_NUMBER
+    version_conflict:
+      description: The submitted entity version is stale.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error_response"
+          examples:
+            conflict:
+              value:
+                data: null
+                meta:
+                  correlation_id: req_01JY5MD16NS0NMN9N050Y6FHBR
+                  server_time: "2026-06-24T15:19:00Z"
+                  next_cursor: null
+                error:
+                  code: VERSION_CONFLICT
+                  message: The resource was updated by another session.
+                  fields:
+                    - path: /version
+                      code: STALE_VALUE
+    invitation_expired:
+      description: The caregiver invitation is expired and can no longer be accepted.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error_response"
+          examples:
+            expired:
+              value:
+                data: null
+                meta:
+                  correlation_id: req_01JY5N48WNA2DWWREMEAX1C7Y4
+                  server_time: "2026-06-24T15:38:00Z"
+                  next_cursor: null
+                error:
+                  code: INVITATION_EXPIRED
+                  message: The invitation expired before it was accepted.
+                  fields: []
+    invitation_already_used:
+      description: The caregiver invitation has already been accepted.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error_response"
+          examples:
+            replayed:
+              value:
+                data: null
+                meta:
+                  correlation_id: req_01JY5N4FV8C3Y32GQFYRCHC3P4
+                  server_time: "2026-06-24T15:39:00Z"
+                  next_cursor: null
+                error:
+                  code: INVITATION_ALREADY_USED
+                  message: This invitation token has already been consumed.
+                  fields: []
+    duplicate_relationship:
+      description: The caregiver relationship already exists in active form.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error_response"
+          examples:
+            duplicate:
+              value:
+                data: null
+                meta:
+                  correlation_id: req_01JY5N4MDSVVKQX5J6H96FJ7AT
+                  server_time: "2026-06-24T15:40:00Z"
+                  next_cursor: null
+                error:
+                  code: DUPLICATE_RELATIONSHIP
+                  message: An active caregiver relationship already exists for this patient and user.
+                  fields: []
+    invalid_state_transition:
+      description: The requested appointment transition is not permitted from the current state.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error_response"
+          examples:
+            invalid_transition:
+              value:
+                data: null
+                meta:
+                  correlation_id: req_01JY5N4VWKEJ0ADY44F3K72TVW
+                  server_time: "2026-06-24T15:41:00Z"
+                  next_cursor: null
+                error:
+                  code: INVALID_STATE_TRANSITION
+                  message: The appointment cannot move from completed back to confirmed.
+                  fields:
+                    - path: /target_status
+                      code: INVALID_TRANSITION
+    idempotency_conflict:
+      description: The same Idempotency-Key was reused with a different payload.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error_response"
+          examples:
+            conflict:
+              value:
+                data: null
+                meta:
+                  correlation_id: req_01JY5P1D58WWJFWXHZMPWS8X8W
+                  server_time: "2026-06-24T16:10:00Z"
+                  next_cursor: null
+                error:
+                  code: IDEMPOTENCY_CONFLICT
+                  message: The idempotency key was already used with a different request payload.
+                  fields:
+                    - path: /Idempotency-Key
+                      code: PAYLOAD_MISMATCH
+    measurement_validation_error:
+      description: The measurement unit or value is outside the accepted validation range.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error_response"
+          examples:
+            invalid_range:
+              value:
+                data: null
+                meta:
+                  correlation_id: req_01JY5P1GN8DFQ6CSTNKA2Y0SXW
+                  server_time: "2026-06-24T16:11:00Z"
+                  next_cursor: null
+                error:
+                  code: VALIDATION_ERROR
+                  message: The measurement value or unit is not accepted for the selected measurement type.
+                  fields:
+                    - path: /value/unit
+                      code: INVALID_UNIT
+                    - path: /value/glucose
+                      code: OUT_OF_RANGE
+    provider_failure:
+      description: The upstream provider or processing adapter is unavailable or failed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error_response"
+          examples:
+            provider_failure:
+              value:
+                data: null
+                meta:
+                  correlation_id: req_01JY5Q10D3C64JK4FSB3KQQW0B
+                  server_time: "2026-06-24T16:40:00Z"
+                  next_cursor: null
+                error:
+                  code: PROVIDER_FAILURE
+                  message: The external processing provider is unavailable. Retry or switch to manual entry.
+                  fields: []
+    share_expired:
+      description: The share link expired and exposes no patient data.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error_response"
+          examples:
+            expired:
+              value:
+                data: null
+                meta:
+                  correlation_id: req_01JY5Q154FASV3GR4B6TCCFSG3
+                  server_time: "2026-06-24T16:41:00Z"
+                  next_cursor: null
+                error:
+                  code: SHARE_EXPIRED
+                  message: This share link is no longer active.
+                  fields: []
+    share_revoked:
+      description: The share link was revoked and exposes no patient data.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error_response"
+          examples:
+            revoked:
+              value:
+                data: null
+                meta:
+                  correlation_id: req_01JY5Q1BBM6T6QAA0K1MYJ6VVW
+                  server_time: "2026-06-24T16:42:00Z"
+                  next_cursor: null
+                error:
+                  code: SHARE_REVOKED
+                  message: This share link has been revoked.
+                  fields: []
+  schemas:
+    api_meta:
+      type: object
+      additionalProperties: false
+      required: [correlation_id, server_time, next_cursor]
+      properties:
+        correlation_id:
+          type: string
+        server_time:
+          type: string
+          format: date-time
+        next_cursor:
+          type:
+            - string
+            - "null"
+      example:
+        correlation_id: req_01JY5M2NW7T3TK7SK0G7D81V82
+        server_time: "2026-06-24T14:40:00Z"
+        next_cursor: null
+    field_error:
+      type: object
+      additionalProperties: false
+      required: [path, code]
+      properties:
+        path:
+          type: string
+        code:
+          type: string
+    api_error:
+      type: object
+      additionalProperties: false
+      required: [code, message, fields]
+      properties:
+        code:
+          type: string
+          enum:
+            - AUTH_REQUIRED
+            - FORBIDDEN_SCOPE
+            - RESOURCE_NOT_FOUND
+            - VALIDATION_FAILED
+            - VALIDATION_ERROR
+            - VERSION_CONFLICT
+            - IDEMPOTENCY_CONFLICT
+            - RATE_LIMITED
+            - DEPENDENCY_UNAVAILABLE
+            - PROCESSING_PENDING
+            - ACCOUNT_SUSPENDED
+            - INVITATION_EXPIRED
+            - INVITATION_ALREADY_USED
+            - DUPLICATE_RELATIONSHIP
+            - INVALID_STATE_TRANSITION
+            - PROVIDER_FAILURE
+            - SHARE_EXPIRED
+            - SHARE_REVOKED
+        message:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/field_error"
+    error_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: "null"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          $ref: "#/components/schemas/api_error"
+    account_status:
+      type: string
+      enum: [active, suspended, recovery_required]
+    notification_privacy:
+      type: string
+      enum: [minimal, hidden]
+    font_scale:
+      type: string
+      enum: [default, large, extra_large]
+    platform:
+      type: string
+      enum: [web, android, ios]
+    role:
+      type: string
+      enum: [patient, caregiver, clinician, org_staff, admin, support]
+    security_event:
+      type: object
+      additionalProperties: false
+      required: [event_type, occurred_at, source]
+      properties:
+        event_type:
+          type: string
+          enum: [failed_login, new_device, session_revoked, recovery_started]
+        occurred_at:
+          type: string
+          format: date-time
+        source:
+          type: string
+          enum: [web, android, ios, backend]
+    me_preferences:
+      type: object
+      additionalProperties: false
+      required: [font_scale, high_contrast_mode, notification_privacy]
+      properties:
+        font_scale:
+          $ref: "#/components/schemas/font_scale"
+        high_contrast_mode:
+          type: boolean
+        notification_privacy:
+          $ref: "#/components/schemas/notification_privacy"
+    me_profile:
+      type: object
+      additionalProperties: false
+      required:
+        - user_id
+        - display_name
+        - account_status
+        - roles
+        - active_patient_id
+        - locale
+        - preferences
+        - patient_ids
+        - security_events
+        - version
+      properties:
+        user_id:
+          type: string
+        display_name:
+          type: string
+        account_status:
+          $ref: "#/components/schemas/account_status"
+        roles:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/role"
+        active_patient_id:
+          type:
+            - string
+            - "null"
+        locale:
+          type: string
+        preferences:
+          $ref: "#/components/schemas/me_preferences"
+        patient_ids:
+          type: array
+          items:
+            type: string
+        security_events:
+          type: array
+          items:
+            $ref: "#/components/schemas/security_event"
+        version:
+          type: integer
+          minimum: 1
+      example:
+        user_id: usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75
+        display_name: Anan Chaiyo
+        account_status: active
+        roles: [patient]
+        active_patient_id: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        locale: th-TH
+        preferences:
+          font_scale: large
+          high_contrast_mode: false
+          notification_privacy: minimal
+        patient_ids:
+          - pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        security_events:
+          - event_type: new_device
+            occurred_at: "2026-06-24T14:40:00Z"
+            source: android
+        version: 3
+    device_session:
+      type: object
+      additionalProperties: false
+      required:
+        - session_id
+        - user_id
+        - status
+        - issued_at
+        - expires_at
+        - last_seen_at
+        - device_name
+        - platform
+        - current
+      properties:
+        session_id:
+          type: string
+        user_id:
+          type: string
+        status:
+          type: string
+          enum: [active, revoked]
+        issued_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        last_seen_at:
+          type: string
+          format: date-time
+        device_name:
+          type: string
+        platform:
+          $ref: "#/components/schemas/platform"
+        current:
+          type: boolean
+    session_exchange_request:
+      type: object
+      additionalProperties: false
+      required: [identity_provider, identity_token, device]
+      properties:
+        identity_provider:
+          type: string
+          enum: [phone_otp, email_passwordless, google, apple]
+        identity_token:
+          type: string
+          minLength: 10
+        device:
+          type: object
+          additionalProperties: false
+          required: [device_name, platform, app_version, locale]
+          properties:
+            device_name:
+              type: string
+            platform:
+              $ref: "#/components/schemas/platform"
+            app_version:
+              type: string
+            locale:
+              type: string
+    session_exchange_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [session, me]
+          properties:
+            session:
+              $ref: "#/components/schemas/device_session"
+            me:
+              $ref: "#/components/schemas/me_profile"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    me_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/me_profile"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    patch_me_request:
+      type: object
+      additionalProperties: false
+      required: [locale, preferences]
+      properties:
+        locale:
+          type: string
+        preferences:
+          $ref: "#/components/schemas/me_preferences"
+    session_list_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [sessions]
+          properties:
+            sessions:
+              type: array
+              items:
+                $ref: "#/components/schemas/device_session"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    command_ack:
+      type: object
+      additionalProperties: false
+      required: [command_id, status, resource_id]
+      properties:
+        command_id:
+          type: string
+        status:
+          type: string
+          enum: [accepted]
+        resource_id:
+          type: string
+    command_ack_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/command_ack"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    consent_document:
+      type: object
+      additionalProperties: false
+      required:
+        - document_key
+        - document_version
+        - title
+        - locale
+        - summary
+        - disclosure_text
+        - required_scopes
+      properties:
+        document_key:
+          type: string
+        document_version:
+          type: string
+        title:
+          type: string
+        locale:
+          type: string
+        summary:
+          type: string
+        disclosure_text:
+          type: string
+        required_scopes:
+          type: array
+          items:
+            type: string
+      example:
+        document_key: caregiver_access_v1
+        document_version: 1.0.0
+        title: Caregiver Access Consent
+        locale: th-TH
+        summary: Grant scoped appointment and medication access to a caregiver.
+        disclosure_text: Access can be revoked at any time and does not allow medication changes without explicit scope.
+        required_scopes:
+          - appointment.read
+          - medication.read
+          - report.create
+    consent_record:
+      type: object
+      additionalProperties: false
+      required:
+        - consent_id
+        - patient_id
+        - document_key
+        - document_version
+        - grantee_type
+        - grantee_id
+        - purposes
+        - scopes
+        - status
+        - accepted_at
+        - expires_at
+        - version
+      properties:
+        consent_id:
+          type: string
+        patient_id:
+          type: string
+        document_key:
+          type: string
+        document_version:
+          type: string
+        grantee_type:
+          type: string
+          enum: [caregiver, clinician, org_staff]
+        grantee_id:
+          type: string
+        purposes:
+          type: array
+          items:
+            type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [draft, active, suspended, revoked, expired]
+        accepted_at:
+          type: string
+          format: date-time
+        expires_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        version:
+          type: integer
+          minimum: 1
+      example:
+        consent_id: cst_01JY5M5A50JQKJQFETR8XFBQ0J
+        patient_id: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        document_key: caregiver_access_v1
+        document_version: 1.0.0
+        grantee_type: caregiver
+        grantee_id: usr_01JY5M590PHYX4VM87QY5PN2S9
+        purposes:
+          - appointment_support
+          - medication_reminders
+        scopes:
+          - patient.read
+          - appointment.write
+          - medication.read
+        status: active
+        accepted_at: "2026-06-24T15:00:00Z"
+        expires_at: "2027-06-24T15:00:00Z"
+        version: 1
+    condition:
+      type: object
+      additionalProperties: false
+      required: [condition_id, name, status, diagnosed_on]
+      properties:
+        condition_id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [active, resolved, monitoring]
+        diagnosed_on:
+          type: string
+          format: date
+      example:
+        condition_id: cond_htn
+        name: Hypertension
+        status: active
+        diagnosed_on: "2018-08-11"
+    allergy:
+      type: object
+      additionalProperties: false
+      required: [allergy_id, substance, category, reaction, severity]
+      properties:
+        allergy_id:
+          type: string
+        substance:
+          type: string
+        category:
+          type: string
+          enum: [drug, food, environment]
+        reaction:
+          type: string
+        severity:
+          type: string
+          enum: [mild, moderate, severe]
+      example:
+        allergy_id: alg_penicillin
+        substance: Penicillin
+        category: drug
+        reaction: rash
+        severity: moderate
+    emergency_contact:
+      type: object
+      additionalProperties: false
+      required: [contact_id, name, relationship, phone_number, priority]
+      properties:
+        contact_id:
+          type: string
+        name:
+          type: string
+        relationship:
+          type: string
+        phone_number:
+          type: string
+          pattern: "^\\+[1-9][0-9]{7,14}$"
+        priority:
+          type: integer
+          minimum: 1
+      example:
+        contact_id: emc_malee
+        name: Malee Chaiyo
+        relationship: daughter
+        phone_number: "+66811112222"
+        priority: 1
+    record_number:
+      type: object
+      additionalProperties: false
+      required: [facility_name, patient_record_number]
+      properties:
+        facility_name:
+          type: string
+        patient_record_number:
+          type: string
+    emergency_card_settings:
+      type: object
+      additionalProperties: false
+      required: [share_blood_type, share_allergies, share_contacts]
+      properties:
+        share_blood_type:
+          type: boolean
+        share_allergies:
+          type: boolean
+        share_contacts:
+          type: boolean
+    patient_profile:
+      type: object
+      additionalProperties: false
+      required:
+        - patient_id
+        - display_name
+        - birth_date
+        - gender
+        - blood_type
+        - language
+        - font_scale
+        - account_owner_user_id
+        - conditions
+        - allergies
+        - emergency_contacts
+        - record_numbers
+        - emergency_card_settings
+        - version
+        - created_at
+        - updated_at
+      properties:
+        patient_id:
+          type: string
+        display_name:
+          type: string
+        birth_date:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [female, male, non_binary, undisclosed]
+        blood_type:
+          type: string
+          enum: [A, B, AB, O, unknown]
+        language:
+          type: string
+        font_scale:
+          $ref: "#/components/schemas/font_scale"
+        account_owner_user_id:
+          type: string
+        conditions:
+          type: array
+          items:
+            $ref: "#/components/schemas/condition"
+        allergies:
+          type: array
+          items:
+            $ref: "#/components/schemas/allergy"
+        emergency_contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/emergency_contact"
+        record_numbers:
+          type: array
+          items:
+            $ref: "#/components/schemas/record_number"
+        emergency_card_settings:
+          $ref: "#/components/schemas/emergency_card_settings"
+        version:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      example:
+        patient_id: pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1
+        display_name: Somjai Chaiyo
+        birth_date: "1955-02-14"
+        gender: female
+        blood_type: O
+        language: th-TH
+        font_scale: large
+        account_owner_user_id: usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75
+        conditions:
+          - condition_id: cond_htn
+            name: Hypertension
+            status: active
+            diagnosed_on: "2018-08-11"
+        allergies:
+          - allergy_id: alg_penicillin
+            substance: Penicillin
+            category: drug
+            reaction: rash
+            severity: moderate
+        emergency_contacts:
+          - contact_id: emc_malee
+            name: Malee Chaiyo
+            relationship: daughter
+            phone_number: "+66811112222"
+            priority: 1
+        record_numbers:
+          - facility_name: Chiang Mai Heart Center
+            patient_record_number: HN-240624-001
+        emergency_card_settings:
+          share_blood_type: true
+          share_allergies: true
+          share_contacts: true
+        version: 6
+        created_at: "2026-06-24T14:40:00Z"
+        updated_at: "2026-06-24T14:50:00Z"
+    create_patient_request:
+      type: object
+      additionalProperties: false
+      required:
+        - display_name
+        - birth_date
+        - gender
+        - blood_type
+        - language
+        - font_scale
+        - conditions
+        - allergies
+        - emergency_contacts
+        - record_numbers
+      properties:
+        display_name:
+          type: string
+          minLength: 1
+        birth_date:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [female, male, non_binary, undisclosed]
+        blood_type:
+          type: string
+          enum: [A, B, AB, O, unknown]
+        language:
+          type: string
+        font_scale:
+          $ref: "#/components/schemas/font_scale"
+        conditions:
+          type: array
+          items:
+            $ref: "#/components/schemas/condition"
+        allergies:
+          type: array
+          items:
+            $ref: "#/components/schemas/allergy"
+        emergency_contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/emergency_contact"
+        record_numbers:
+          type: array
+          items:
+            $ref: "#/components/schemas/record_number"
+    patch_patient_request:
+      type: object
+      additionalProperties: false
+      properties:
+        display_name:
+          type: string
+          minLength: 1
+        language:
+          type: string
+        font_scale:
+          $ref: "#/components/schemas/font_scale"
+        conditions:
+          type: array
+          items:
+            $ref: "#/components/schemas/condition"
+        allergies:
+          type: array
+          items:
+            $ref: "#/components/schemas/allergy"
+        emergency_contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/emergency_contact"
+        record_numbers:
+          type: array
+          items:
+            $ref: "#/components/schemas/record_number"
+        emergency_card_settings:
+          $ref: "#/components/schemas/emergency_card_settings"
+      minProperties: 1
+    patient_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/patient_profile"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    patient_list_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [patients]
+          properties:
+            patients:
+              type: array
+              items:
+                $ref: "#/components/schemas/patient_profile"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    create_consent_request:
+      type: object
+      additionalProperties: false
+      required:
+        - document_key
+        - document_version
+        - grantee_type
+        - grantee_id
+        - purposes
+        - scopes
+        - accepted_at
+      properties:
+        document_key:
+          type: string
+        document_version:
+          type: string
+        grantee_type:
+          type: string
+          enum: [caregiver, clinician, org_staff]
+        grantee_id:
+          type: string
+        purposes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        scopes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        accepted_at:
+          type: string
+          format: date-time
+        expires_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    consent_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/consent_record"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    consent_list_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [consents]
+          properties:
+            consents:
+              type: array
+              items:
+                $ref: "#/components/schemas/consent_record"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    consent_document_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/consent_document"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    permission_scope:
+      type: string
+      enum:
+        - patient.read
+        - appointment.read
+        - appointment.write
+        - medication.read
+        - medication.write
+        - report.create
+    caregiver_invitation:
+      type: object
+      additionalProperties: false
+      required:
+        - invitation_id
+        - patient_id
+        - invitation_channel
+        - invitee_contact
+        - invitee_display_name
+        - relationship_role
+        - permission_scopes
+        - status
+        - expires_at
+        - created_at
+        - invitation_token_preview
+      properties:
+        invitation_id:
+          type: string
+        patient_id:
+          type: string
+        invitation_channel:
+          type: string
+          enum: [sms, email, qr, link]
+        invitee_contact:
+          type: string
+        invitee_display_name:
+          type: string
+        relationship_role:
+          type: string
+          enum: [primary, backup, transport]
+        permission_scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/permission_scope"
+        status:
+          type: string
+          enum: [pending, accepted, revoked, expired]
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        invitation_token_preview:
+          type: string
+    create_caregiver_invitation_request:
+      type: object
+      additionalProperties: false
+      required:
+        - invitation_channel
+        - invitee_contact
+        - invitee_display_name
+        - relationship_role
+        - permission_scopes
+        - expires_at
+      properties:
+        invitation_channel:
+          type: string
+          enum: [sms, email, qr, link]
+        invitee_contact:
+          type: string
+        invitee_display_name:
+          type: string
+        relationship_role:
+          type: string
+          enum: [primary, backup, transport]
+        permission_scopes:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/permission_scope"
+        expires_at:
+          type: string
+          format: date-time
+    accept_caregiver_invitation_request:
+      type: object
+      additionalProperties: false
+      required: [invitation_token]
+      properties:
+        invitation_token:
+          type: string
+          minLength: 12
+    caregiver_relationship:
+      type: object
+      additionalProperties: false
+      required:
+        - relationship_id
+        - patient_id
+        - caregiver_user_id
+        - caregiver_display_name
+        - relationship_role
+        - permission_scopes
+        - access_status
+        - invitation_id
+        - expires_at
+        - created_at
+        - updated_at
+        - version
+      properties:
+        relationship_id:
+          type: string
+        patient_id:
+          type: string
+        caregiver_user_id:
+          type: string
+        caregiver_display_name:
+          type: string
+        relationship_role:
+          type: string
+          enum: [primary, backup, transport]
+        permission_scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/permission_scope"
+        access_status:
+          type: string
+          enum: [active, suspended, revoked, expired]
+        invitation_id:
+          type: string
+        expires_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          minimum: 1
+    caregiver_relationship_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/caregiver_relationship"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    caregiver_relationship_list_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [relationships]
+          properties:
+            relationships:
+              type: array
+              items:
+                $ref: "#/components/schemas/caregiver_relationship"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    caregiver_invitation_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/caregiver_invitation"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    caregiver_patient_summary:
+      type: object
+      additionalProperties: false
+      required:
+        - patient_id
+        - display_name
+        - relationship_id
+        - relationship_role
+        - permission_scopes
+        - access_status
+      properties:
+        patient_id:
+          type: string
+        display_name:
+          type: string
+        relationship_id:
+          type: string
+        relationship_role:
+          type: string
+          enum: [primary, backup, transport]
+        permission_scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/permission_scope"
+        access_status:
+          type: string
+          enum: [active, suspended, revoked, expired]
+    caregiver_patient_list_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [patients]
+          properties:
+            patients:
+              type: array
+              items:
+                $ref: "#/components/schemas/caregiver_patient_summary"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    appointment_reminder:
+      type: object
+      additionalProperties: false
+      required: [channel, minutes_before]
+      properties:
+        channel:
+          type: string
+          enum: [in_app, web_push, sms, email]
+        minutes_before:
+          type: integer
+          minimum: 0
+    preparation_item:
+      type: object
+      additionalProperties: false
+      required: [item_id, label, type]
+      properties:
+        item_id:
+          type: string
+        label:
+          type: string
+        type:
+          type: string
+          enum: [fasting, document, medication, travel, other]
+    document_reference:
+      type: object
+      additionalProperties: false
+      required: [asset_id, label]
+      properties:
+        asset_id:
+          type: string
+        label:
+          type: string
+    ocr_draft_reference:
+      type: object
+      additionalProperties: false
+      required: [draft_id, source_asset_id]
+      properties:
+        draft_id:
+          type: string
+        source_asset_id:
+          type: string
+    appointment_status:
+      type: string
+      enum:
+        - upcoming
+        - confirmed
+        - traveling
+        - arrived
+        - waiting
+        - completed
+        - rescheduled
+        - cancelled
+        - missed
+    appointment:
+      type: object
+      additionalProperties: false
+      required:
+        - appointment_id
+        - patient_id
+        - scheduled_at
+        - timezone
+        - facility_name
+        - department
+        - building
+        - room
+        - clinician_name
+        - notes
+        - status
+        - responsible_caregiver_relationship_id
+        - reminders
+        - preparation_items
+        - document_links
+        - ocr_draft_ref
+        - soft_deleted_at
+        - version
+        - created_at
+        - updated_at
+      properties:
+        appointment_id:
+          type: string
+        patient_id:
+          type: string
+        scheduled_at:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+        facility_name:
+          type: string
+        department:
+          type: string
+        building:
+          type: string
+        room:
+          type: string
+        clinician_name:
+          type: string
+        notes:
+          type: string
+        status:
+          $ref: "#/components/schemas/appointment_status"
+        responsible_caregiver_relationship_id:
+          type:
+            - string
+            - "null"
+        reminders:
+          type: array
+          items:
+            $ref: "#/components/schemas/appointment_reminder"
+        preparation_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/preparation_item"
+        document_links:
+          type: array
+          items:
+            $ref: "#/components/schemas/document_reference"
+        ocr_draft_ref:
+          anyOf:
+            - $ref: "#/components/schemas/ocr_draft_reference"
+            - type: "null"
+        soft_deleted_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        version:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    create_appointment_request:
+      type: object
+      additionalProperties: false
+      required:
+        - scheduled_at
+        - timezone
+        - facility_name
+        - department
+        - building
+        - room
+        - clinician_name
+        - notes
+        - reminders
+        - preparation_items
+        - document_links
+        - responsible_caregiver_relationship_id
+      properties:
+        scheduled_at:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+        facility_name:
+          type: string
+        department:
+          type: string
+        building:
+          type: string
+        room:
+          type: string
+        clinician_name:
+          type: string
+        notes:
+          type: string
+        reminders:
+          type: array
+          items:
+            $ref: "#/components/schemas/appointment_reminder"
+        preparation_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/preparation_item"
+        document_links:
+          type: array
+          items:
+            $ref: "#/components/schemas/document_reference"
+        responsible_caregiver_relationship_id:
+          type:
+            - string
+            - "null"
+    patch_appointment_request:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        scheduled_at:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+        facility_name:
+          type: string
+        department:
+          type: string
+        building:
+          type: string
+        room:
+          type: string
+        clinician_name:
+          type: string
+        notes:
+          type: string
+        reminders:
+          type: array
+          items:
+            $ref: "#/components/schemas/appointment_reminder"
+        preparation_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/preparation_item"
+        document_links:
+          type: array
+          items:
+            $ref: "#/components/schemas/document_reference"
+        responsible_caregiver_relationship_id:
+          type:
+            - string
+            - "null"
+        soft_delete_reason:
+          type: string
+    appointment_transition_request:
+      type: object
+      additionalProperties: false
+      required: [target_status, reason]
+      properties:
+        target_status:
+          $ref: "#/components/schemas/appointment_status"
+        reason:
+          type: string
+        transition_occurred_at:
+          type: string
+          format: date-time
+    appointment_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/appointment"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    appointment_list_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [appointments]
+          properties:
+            appointments:
+              type: array
+              items:
+                $ref: "#/components/schemas/appointment"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    medication_image:
+      type: object
+      additionalProperties: false
+      required: [image_id, asset_id, caption]
+      properties:
+        image_id:
+          type: string
+        asset_id:
+          type: string
+        caption:
+          type: string
+    medication_inventory:
+      type: object
+      additionalProperties: false
+      required: [estimated_remaining_quantity, quantity_unit]
+      properties:
+        estimated_remaining_quantity:
+          type: number
+          minimum: 0
+        quantity_unit:
+          type: string
+    medication_status:
+      type: string
+      enum: [active, paused, completed, cancelled]
+    medication:
+      type: object
+      additionalProperties: false
+      required:
+        - medication_id
+        - patient_id
+        - display_name
+        - generic_name
+        - form
+        - strength
+        - instructions
+        - status
+        - source
+        - caregiver_note
+        - images
+        - active_schedule_ids
+        - inventory
+        - warning_text
+        - version
+        - created_at
+        - updated_at
+      properties:
+        medication_id:
+          type: string
+        patient_id:
+          type: string
+        display_name:
+          type: string
+        generic_name:
+          type: string
+        form:
+          type: string
+        strength:
+          type: string
+        instructions:
+          type: string
+        status:
+          $ref: "#/components/schemas/medication_status"
+        source:
+          type: string
+          enum: [manual, ocr_confirmed, import]
+        caregiver_note:
+          type: string
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/medication_image"
+        active_schedule_ids:
+          type: array
+          items:
+            type: string
+        inventory:
+          $ref: "#/components/schemas/medication_inventory"
+        warning_text:
+          type: string
+        version:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    create_medication_request:
+      type: object
+      additionalProperties: false
+      required:
+        - display_name
+        - generic_name
+        - form
+        - strength
+        - instructions
+        - source
+        - caregiver_note
+        - images
+        - inventory
+      properties:
+        display_name:
+          type: string
+        generic_name:
+          type: string
+        form:
+          type: string
+        strength:
+          type: string
+        instructions:
+          type: string
+        source:
+          type: string
+          enum: [manual, ocr_confirmed, import]
+        caregiver_note:
+          type: string
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/medication_image"
+        inventory:
+          $ref: "#/components/schemas/medication_inventory"
+    patch_medication_request:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        display_name:
+          type: string
+        generic_name:
+          type: string
+        instructions:
+          type: string
+        status:
+          $ref: "#/components/schemas/medication_status"
+        caregiver_note:
+          type: string
+        inventory:
+          $ref: "#/components/schemas/medication_inventory"
+    medication_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/medication"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    medication_list_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [medications]
+          properties:
+            medications:
+              type: array
+              items:
+                $ref: "#/components/schemas/medication"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    schedule_pattern_type:
+      type: string
+      enum:
+        [daily_times, specific_days, every_n_hours, weekly, monthly, as_needed]
+    medication_schedule:
+      type: object
+      additionalProperties: false
+      required:
+        - schedule_id
+        - medication_id
+        - pattern_type
+        - timezone
+        - local_times
+        - interval_hours
+        - days_of_week
+        - day_of_month
+        - as_needed_instructions
+        - effective_from
+        - effective_to
+        - superseded_by_schedule_id
+        - active
+        - version
+        - created_at
+      properties:
+        schedule_id:
+          type: string
+        medication_id:
+          type: string
+        pattern_type:
+          $ref: "#/components/schemas/schedule_pattern_type"
+        timezone:
+          type: string
+        local_times:
+          type: array
+          items:
+            type: string
+            pattern: "^[0-2][0-9]:[0-5][0-9]$"
+        interval_hours:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 24
+        days_of_week:
+          type: array
+          items:
+            type: string
+            enum:
+              [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+        day_of_month:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 31
+        as_needed_instructions:
+          type:
+            - string
+            - "null"
+        effective_from:
+          type: string
+          format: date
+        effective_to:
+          type:
+            - string
+            - "null"
+          format: date
+        superseded_by_schedule_id:
+          type:
+            - string
+            - "null"
+        active:
+          type: boolean
+        version:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+    create_medication_schedule_request:
+      type: object
+      additionalProperties: false
+      required:
+        - pattern_type
+        - timezone
+        - local_times
+        - interval_hours
+        - days_of_week
+        - day_of_month
+        - as_needed_instructions
+        - effective_from
+        - effective_to
+      properties:
+        pattern_type:
+          $ref: "#/components/schemas/schedule_pattern_type"
+        timezone:
+          type: string
+        local_times:
+          type: array
+          items:
+            type: string
+            pattern: "^[0-2][0-9]:[0-5][0-9]$"
+        interval_hours:
+          type:
+            - integer
+            - "null"
+        days_of_week:
+          type: array
+          items:
+            type: string
+            enum:
+              [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+        day_of_month:
+          type:
+            - integer
+            - "null"
+        as_needed_instructions:
+          type:
+            - string
+            - "null"
+        effective_from:
+          type: string
+          format: date
+        effective_to:
+          type:
+            - string
+            - "null"
+          format: date
+    medication_schedule_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/medication_schedule"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    medication_schedule_list_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [schedules]
+          properties:
+            schedules:
+              type: array
+              items:
+                $ref: "#/components/schemas/medication_schedule"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    dose_status:
+      type: string
+      enum: [scheduled, due, snoozed, taken, skipped, issue_reported, missed]
+    dose_occurrence:
+      type: object
+      additionalProperties: false
+      required:
+        - dose_id
+        - patient_id
+        - medication_id
+        - schedule_id
+        - schedule_version
+        - due_at
+        - timezone
+        - status
+        - responded_at
+        - actor_user_id
+        - actor_role
+        - response_reason
+        - version
+      properties:
+        dose_id:
+          type: string
+        patient_id:
+          type: string
+        medication_id:
+          type: string
+        schedule_id:
+          type: string
+        schedule_version:
+          type: integer
+          minimum: 1
+        due_at:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+        status:
+          $ref: "#/components/schemas/dose_status"
+        responded_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        actor_user_id:
+          type:
+            - string
+            - "null"
+        actor_role:
+          type:
+            - string
+            - "null"
+        response_reason:
+          type:
+            - string
+            - "null"
+        version:
+          type: integer
+          minimum: 1
+    dose_action_request:
+      type: object
+      additionalProperties: false
+      required:
+        [action, responded_at, actor_user_id, actor_role, response_reason]
+      properties:
+        action:
+          type: string
+          enum: [taken, snoozed, skipped, issue_reported]
+        responded_at:
+          type: string
+          format: date-time
+        actor_user_id:
+          type: string
+        actor_role:
+          type: string
+          enum: [patient, caregiver]
+        response_reason:
+          type: string
+    dose_correction_request:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          corrected_status,
+          corrected_at,
+          actor_user_id,
+          actor_role,
+          correction_reason,
+        ]
+      properties:
+        corrected_status:
+          $ref: "#/components/schemas/dose_status"
+        corrected_at:
+          type: string
+          format: date-time
+        actor_user_id:
+          type: string
+        actor_role:
+          type: string
+          enum: [patient, caregiver, clinician]
+        correction_reason:
+          type: string
+    dose_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/dose_occurrence"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    dose_list_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [doses]
+          properties:
+            doses:
+              type: array
+              items:
+                $ref: "#/components/schemas/dose_occurrence"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    measurement_source:
+      type: string
+      enum: [manual, caregiver, device, import]
+    weight_measurement_value:
+      type: object
+      additionalProperties: false
+      required: [unit, amount]
+      properties:
+        unit:
+          type: string
+          const: kg
+        amount:
+          type: number
+          minimum: 1
+          maximum: 500
+    height_measurement_value:
+      type: object
+      additionalProperties: false
+      required: [unit, amount]
+      properties:
+        unit:
+          type: string
+          const: cm
+        amount:
+          type: number
+          minimum: 30
+          maximum: 250
+    pulse_measurement_value:
+      type: object
+      additionalProperties: false
+      required: [unit, amount]
+      properties:
+        unit:
+          type: string
+          const: bpm
+        amount:
+          type: integer
+          minimum: 20
+          maximum: 250
+    glucose_measurement_value:
+      type: object
+      additionalProperties: false
+      required: [unit, amount, context]
+      properties:
+        unit:
+          type: string
+          const: mg/dL
+        amount:
+          type: number
+          minimum: 20
+          maximum: 600
+        context:
+          type: string
+          enum: [fasting, post_meal, bedtime, random]
+    blood_pressure_measurement_value:
+      type: object
+      additionalProperties: false
+      required: [unit, systolic, diastolic]
+      properties:
+        unit:
+          type: string
+          const: mmHg
+        systolic:
+          type: integer
+          minimum: 50
+          maximum: 260
+        diastolic:
+          type: integer
+          minimum: 30
+          maximum: 180
+    weight_measurement_request:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          measurement_type,
+          measured_at,
+          timezone,
+          source,
+          recorded_by_user_id,
+          value,
+        ]
+      properties:
+        measurement_type:
+          type: string
+          const: weight
+        measured_at:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+        source:
+          $ref: "#/components/schemas/measurement_source"
+        recorded_by_user_id:
+          type: string
+        note:
+          type: string
+        value:
+          $ref: "#/components/schemas/weight_measurement_value"
+    height_measurement_request:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          measurement_type,
+          measured_at,
+          timezone,
+          source,
+          recorded_by_user_id,
+          value,
+        ]
+      properties:
+        measurement_type:
+          type: string
+          const: height
+        measured_at:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+        source:
+          $ref: "#/components/schemas/measurement_source"
+        recorded_by_user_id:
+          type: string
+        note:
+          type: string
+        value:
+          $ref: "#/components/schemas/height_measurement_value"
+    pulse_measurement_request:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          measurement_type,
+          measured_at,
+          timezone,
+          source,
+          recorded_by_user_id,
+          value,
+        ]
+      properties:
+        measurement_type:
+          type: string
+          const: pulse
+        measured_at:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+        source:
+          $ref: "#/components/schemas/measurement_source"
+        recorded_by_user_id:
+          type: string
+        note:
+          type: string
+        value:
+          $ref: "#/components/schemas/pulse_measurement_value"
+    glucose_measurement_request:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          measurement_type,
+          measured_at,
+          timezone,
+          source,
+          recorded_by_user_id,
+          value,
+        ]
+      properties:
+        measurement_type:
+          type: string
+          const: glucose
+        measured_at:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+        source:
+          $ref: "#/components/schemas/measurement_source"
+        recorded_by_user_id:
+          type: string
+        note:
+          type: string
+        value:
+          $ref: "#/components/schemas/glucose_measurement_value"
+    blood_pressure_measurement_request:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          measurement_type,
+          measured_at,
+          timezone,
+          source,
+          recorded_by_user_id,
+          value,
+        ]
+      properties:
+        measurement_type:
+          type: string
+          const: blood_pressure
+        measured_at:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+        source:
+          $ref: "#/components/schemas/measurement_source"
+        recorded_by_user_id:
+          type: string
+        note:
+          type: string
+        value:
+          $ref: "#/components/schemas/blood_pressure_measurement_value"
+    create_measurement_request:
+      oneOf:
+        - $ref: "#/components/schemas/weight_measurement_request"
+        - $ref: "#/components/schemas/height_measurement_request"
+        - $ref: "#/components/schemas/pulse_measurement_request"
+        - $ref: "#/components/schemas/glucose_measurement_request"
+        - $ref: "#/components/schemas/blood_pressure_measurement_request"
+    patch_measurement_request:
+      oneOf:
+        - $ref: "#/components/schemas/weight_measurement_request"
+        - $ref: "#/components/schemas/height_measurement_request"
+        - $ref: "#/components/schemas/pulse_measurement_request"
+        - $ref: "#/components/schemas/glucose_measurement_request"
+        - $ref: "#/components/schemas/blood_pressure_measurement_request"
+    measurement_record:
+      type: object
+      additionalProperties: false
+      required:
+        - measurement_id
+        - patient_id
+        - measurement_type
+        - measured_at
+        - timezone
+        - source
+        - recorded_by_user_id
+        - note
+        - value
+        - version
+        - created_at
+        - updated_at
+      properties:
+        measurement_id:
+          type: string
+        patient_id:
+          type: string
+        measurement_type:
+          type: string
+          enum: [weight, height, pulse, glucose, blood_pressure]
+        measured_at:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+        source:
+          $ref: "#/components/schemas/measurement_source"
+        recorded_by_user_id:
+          type: string
+        note:
+          type: string
+        value:
+          oneOf:
+            - $ref: "#/components/schemas/weight_measurement_value"
+            - $ref: "#/components/schemas/height_measurement_value"
+            - $ref: "#/components/schemas/pulse_measurement_value"
+            - $ref: "#/components/schemas/glucose_measurement_value"
+            - $ref: "#/components/schemas/blood_pressure_measurement_value"
+        version:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    measurement_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/measurement_record"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    measurement_list_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [measurements]
+          properties:
+            measurements:
+              type: array
+              items:
+                $ref: "#/components/schemas/measurement_record"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    measurement_summary_item:
+      type: object
+      additionalProperties: false
+      required:
+        - measurement_type
+        - latest_value_text
+        - average_value_text
+        - trend_direction
+        - threshold_status
+      properties:
+        measurement_type:
+          type: string
+          enum: [weight, height, pulse, glucose, blood_pressure]
+        latest_value_text:
+          type: string
+        average_value_text:
+          type: string
+        trend_direction:
+          type: string
+          enum: [up, down, stable, insufficient_data]
+        threshold_status:
+          type: string
+          enum: [within_range, outside_range, not_configured]
+    measurement_summary_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [summaries]
+          properties:
+            summaries:
+              type: array
+              items:
+                $ref: "#/components/schemas/measurement_summary_item"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    asset_upload_target:
+      type: object
+      additionalProperties: false
+      required: [upload_url, upload_expires_at, max_upload_size_bytes]
+      properties:
+        upload_url:
+          type: string
+          format: uri
+        upload_expires_at:
+          type: string
+          format: date-time
+        max_upload_size_bytes:
+          type: integer
+          minimum: 1
+    create_asset_upload_request:
+      type: object
+      additionalProperties: false
+      required:
+        [category, mime_type, file_size_bytes, checksum_sha256, capture_source]
+      properties:
+        category:
+          type: string
+          enum:
+            [
+              appointment_document,
+              medication_label,
+              report_attachment,
+              audio_recording,
+            ]
+        mime_type:
+          type: string
+        file_size_bytes:
+          type: integer
+          minimum: 1
+        checksum_sha256:
+          type: string
+          minLength: 32
+        capture_source:
+          type: string
+          enum: [camera, file_picker, microphone]
+    asset_upload_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            [
+              asset_id,
+              patient_id,
+              category,
+              mime_type,
+              file_size_bytes,
+              upload_target,
+            ]
+          properties:
+            asset_id:
+              type: string
+            patient_id:
+              type: string
+            category:
+              type: string
+            mime_type:
+              type: string
+            file_size_bytes:
+              type: integer
+            upload_target:
+              $ref: "#/components/schemas/asset_upload_target"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    processing_job:
+      type: object
+      additionalProperties: false
+      required:
+        - job_id
+        - asset_id
+        - job_type
+        - status
+        - provider_name
+        - provider_model_version
+        - retryable
+        - draft_id
+        - created_at
+        - updated_at
+      properties:
+        job_id:
+          type: string
+        asset_id:
+          type: string
+        job_type:
+          type: string
+          enum: [ocr, transcription]
+        status:
+          type: string
+          enum: [queued, processing, review_required, completed, failed]
+        provider_name:
+          type: string
+        provider_model_version:
+          type: string
+        retryable:
+          type: boolean
+        draft_id:
+          type:
+            - string
+            - "null"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    processing_job_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/processing_job"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    confirm_processing_draft_request:
+      type: object
+      additionalProperties: false
+      required: [target_type, confirmed_by_user_id, fields]
+      properties:
+        target_type:
+          type: string
+          enum: [appointment, medication, checklist, transcript]
+        confirmed_by_user_id:
+          type: string
+        fields:
+          type: object
+          additionalProperties: true
+    report_record:
+      type: object
+      additionalProperties: false
+      required:
+        - report_id
+        - patient_id
+        - scopes
+        - status
+        - expires_at
+        - asset_id
+        - created_at
+      properties:
+        report_id:
+          type: string
+        patient_id:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [queued, generating, ready, failed]
+        expires_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        asset_id:
+          type:
+            - string
+            - "null"
+        created_at:
+          type: string
+          format: date-time
+    create_report_request:
+      type: object
+      additionalProperties: false
+      required: [scopes, period_start, period_end]
+      properties:
+        scopes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+    report_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/report_record"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    share_link_record:
+      type: object
+      additionalProperties: false
+      required:
+        - share_link_id
+        - patient_id
+        - scopes
+        - status
+        - expires_at
+        - share_url
+      properties:
+        share_link_id:
+          type: string
+        patient_id:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [active, revoked, expired]
+        expires_at:
+          type: string
+          format: date-time
+        share_url:
+          type: string
+          format: uri
+    create_share_link_request:
+      type: object
+      additionalProperties: false
+      required: [report_id, scopes, expires_at]
+      properties:
+        report_id:
+          type: string
+        scopes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        expires_at:
+          type: string
+          format: date-time
+    share_link_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/share_link_record"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    public_share_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [report_id, scopes, download_url]
+          properties:
+            report_id:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            download_url:
+              type: string
+              format: uri
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    notification_preferences:
+      type: object
+      additionalProperties: false
+      required:
+        - privacy_level
+        - quiet_hours_start
+        - quiet_hours_end
+        - push_enabled
+        - caregiver_escalation_enabled
+      properties:
+        privacy_level:
+          type: string
+          enum: [minimal, hidden]
+        quiet_hours_start:
+          type: string
+          pattern: "^[0-2][0-9]:[0-5][0-9]$"
+        quiet_hours_end:
+          type: string
+          pattern: "^[0-2][0-9]:[0-5][0-9]$"
+        push_enabled:
+          type: boolean
+        caregiver_escalation_enabled:
+          type: boolean
+    patch_notification_preferences_request:
+      type: object
+      additionalProperties: false
+      required:
+        - privacy_level
+        - quiet_hours_start
+        - quiet_hours_end
+        - push_enabled
+        - caregiver_escalation_enabled
+      properties:
+        privacy_level:
+          type: string
+          enum: [minimal, hidden]
+        quiet_hours_start:
+          type: string
+          pattern: "^[0-2][0-9]:[0-5][0-9]$"
+        quiet_hours_end:
+          type: string
+          pattern: "^[0-2][0-9]:[0-5][0-9]$"
+        push_enabled:
+          type: boolean
+        caregiver_escalation_enabled:
+          type: boolean
+    notification_preferences_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/notification_preferences"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    create_push_subscription_request:
+      type: object
+      additionalProperties: false
+      required: [endpoint, p256dh, auth, device_name]
+      properties:
+        endpoint:
+          type: string
+          format: uri
+        p256dh:
+          type: string
+        auth:
+          type: string
+        device_name:
+          type: string
+    push_subscription_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [subscription_id, endpoint_hash, push_enabled]
+          properties:
+            subscription_id:
+              type: string
+            endpoint_hash:
+              type: string
+            push_enabled:
+              type: boolean
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    sos_channel_status:
+      type: object
+      additionalProperties: false
+      required: [channel, delivery_status, detail]
+      properties:
+        channel:
+          type: string
+          enum: [call, sms, push, live_location]
+        delivery_status:
+          type: string
+          enum: [sent, failed, unavailable]
+        detail:
+          type: string
+    create_sos_request:
+      type: object
+      additionalProperties: false
+      required: [allowed_channels, location_shared]
+      properties:
+        allowed_channels:
+          type: array
+          items:
+            type: string
+            enum: [call, sms, push, live_location]
+        location_shared:
+          type: boolean
+    sos_event:
+      type: object
+      additionalProperties: false
+      required:
+        - sos_id
+        - patient_id
+        - status
+        - disclosure_note
+        - allowed_channels
+        - channel_statuses
+        - initiated_at
+        - closed_at
+      properties:
+        sos_id:
+          type: string
+        patient_id:
+          type: string
+        status:
+          type: string
+          enum: [active, closed]
+        disclosure_note:
+          type: string
+        allowed_channels:
+          type: array
+          items:
+            type: string
+            enum: [call, sms, push, live_location]
+        channel_statuses:
+          type: array
+          items:
+            $ref: "#/components/schemas/sos_channel_status"
+        initiated_at:
+          type: string
+          format: date-time
+        closed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    sos_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/sos_event"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    emergency_profile:
+      type: object
+      additionalProperties: false
+      required:
+        - patient_id
+        - display_name
+        - blood_type
+        - allergies_summary
+        - emergency_contacts
+      properties:
+        patient_id:
+          type: string
+        display_name:
+          type: string
+        blood_type:
+          type: string
+        allergies_summary:
+          type: array
+          items:
+            type: string
+        emergency_contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/emergency_contact"
+    emergency_profile_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          $ref: "#/components/schemas/emergency_profile"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    sync_mutation:
+      type: object
+      additionalProperties: false
+      required:
+        - client_mutation_id
+        - mutation_type
+        - base_version
+        - idempotency_key
+        - payload
+      properties:
+        client_mutation_id:
+          type: string
+        mutation_type:
+          type: string
+        base_version:
+          type:
+            - integer
+            - "null"
+        idempotency_key:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+    sync_batch_request:
+      type: object
+      additionalProperties: false
+      required: [mutations]
+      properties:
+        mutations:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/sync_mutation"
+    sync_mutation_result:
+      type: object
+      additionalProperties: false
+      required:
+        [client_mutation_id, outcome, retryable, server_resource_id, error_code]
+      properties:
+        client_mutation_id:
+          type: string
+        outcome:
+          type: string
+          enum: [applied, retryable_failure, conflict]
+        retryable:
+          type: boolean
+        server_resource_id:
+          type:
+            - string
+            - "null"
+        error_code:
+          type:
+            - string
+            - "null"
+    sync_batch_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [results]
+          properties:
+            results:
+              type: array
+              items:
+                $ref: "#/components/schemas/sync_mutation_result"
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"
+    sync_changes_response:
+      type: object
+      additionalProperties: false
+      required: [data, meta, error]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [changes]
+          properties:
+            changes:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+        meta:
+          $ref: "#/components/schemas/api_meta"
+        error:
+          type: "null"

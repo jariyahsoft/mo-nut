@@ -1,0 +1,257 @@
+{
+  "task": "03",
+  "cases": [
+    {
+      "name": "create_medication_request",
+      "kind": "request",
+      "operation_id": "create_medication",
+      "content_type": "application/json",
+      "payload": {
+        "display_name": "Metformin 500 mg tablet",
+        "generic_name": "Metformin",
+        "form": "tablet",
+        "strength": "500 mg",
+        "instructions": "Take after meals.",
+        "source": "manual",
+        "caregiver_note": "Daughter confirms evening dose support.",
+        "images": [
+          {
+            "image_id": "img_01JY5P0N2ME8R2TRR7SABH61QY",
+            "asset_id": "ast_01JY5P0P1FTJ25G2V20HZ4T04J",
+            "caption": "Front of blister pack"
+          }
+        ],
+        "inventory": {
+          "estimated_remaining_quantity": 24,
+          "quantity_unit": "tablets"
+        }
+      }
+    },
+    {
+      "name": "create_schedule_request_every_n_hours",
+      "kind": "request",
+      "operation_id": "create_medication_schedule",
+      "content_type": "application/json",
+      "payload": {
+        "pattern_type": "every_n_hours",
+        "timezone": "Asia/Bangkok",
+        "local_times": [],
+        "interval_hours": 8,
+        "days_of_week": [],
+        "day_of_month": null,
+        "as_needed_instructions": null,
+        "effective_from": "2026-06-25",
+        "effective_to": null
+      }
+    },
+    {
+      "name": "create_schedule_request_daily_times",
+      "kind": "request",
+      "operation_id": "create_medication_schedule",
+      "content_type": "application/json",
+      "payload": {
+        "pattern_type": "daily_times",
+        "timezone": "Asia/Bangkok",
+        "local_times": ["08:00", "20:00"],
+        "interval_hours": null,
+        "days_of_week": [],
+        "day_of_month": null,
+        "as_needed_instructions": null,
+        "effective_from": "2026-06-25",
+        "effective_to": null
+      }
+    },
+    {
+      "name": "create_schedule_request_specific_days",
+      "kind": "request",
+      "operation_id": "create_medication_schedule",
+      "content_type": "application/json",
+      "payload": {
+        "pattern_type": "specific_days",
+        "timezone": "Asia/Bangkok",
+        "local_times": ["09:00"],
+        "interval_hours": null,
+        "days_of_week": ["monday", "wednesday", "friday"],
+        "day_of_month": null,
+        "as_needed_instructions": null,
+        "effective_from": "2026-06-25",
+        "effective_to": null
+      }
+    },
+    {
+      "name": "create_schedule_request_weekly",
+      "kind": "request",
+      "operation_id": "create_medication_schedule",
+      "content_type": "application/json",
+      "payload": {
+        "pattern_type": "weekly",
+        "timezone": "Asia/Bangkok",
+        "local_times": ["10:30"],
+        "interval_hours": null,
+        "days_of_week": ["sunday"],
+        "day_of_month": null,
+        "as_needed_instructions": null,
+        "effective_from": "2026-06-25",
+        "effective_to": null
+      }
+    },
+    {
+      "name": "create_schedule_request_monthly",
+      "kind": "request",
+      "operation_id": "create_medication_schedule",
+      "content_type": "application/json",
+      "payload": {
+        "pattern_type": "monthly",
+        "timezone": "Asia/Bangkok",
+        "local_times": ["07:15"],
+        "interval_hours": null,
+        "days_of_week": [],
+        "day_of_month": 15,
+        "as_needed_instructions": null,
+        "effective_from": "2026-06-25",
+        "effective_to": null
+      }
+    },
+    {
+      "name": "create_schedule_request_as_needed",
+      "kind": "request",
+      "operation_id": "create_medication_schedule",
+      "content_type": "application/json",
+      "payload": {
+        "pattern_type": "as_needed",
+        "timezone": "Asia/Bangkok",
+        "local_times": [],
+        "interval_hours": null,
+        "days_of_week": [],
+        "day_of_month": null,
+        "as_needed_instructions": "Use when blood glucose is below clinician threshold.",
+        "effective_from": "2026-06-25",
+        "effective_to": null
+      }
+    },
+    {
+      "name": "submit_dose_action_request",
+      "kind": "request",
+      "operation_id": "submit_dose_action",
+      "content_type": "application/json",
+      "payload": {
+        "action": "taken",
+        "responded_at": "2026-06-24T16:20:00Z",
+        "actor_user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+        "actor_role": "patient",
+        "response_reason": "Taken after breakfast."
+      }
+    },
+    {
+      "name": "submit_dose_action_response",
+      "kind": "response",
+      "operation_id": "submit_dose_action",
+      "status": 200,
+      "content_type": "application/json",
+      "payload": {
+        "data": {
+          "dose_id": "dos_01JY5P15W06MZ8A8AQ3QYWQ5J5",
+          "patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+          "medication_id": "med_01JY5P0J6NCTN4W45MYX96G4QK",
+          "schedule_id": "sch_01JY5P0R641A2D86XAVZQF5QJ0",
+          "schedule_version": 2,
+          "due_at": "2026-06-24T16:00:00Z",
+          "timezone": "Asia/Bangkok",
+          "status": "taken",
+          "responded_at": "2026-06-24T16:20:00Z",
+          "actor_user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+          "actor_role": "patient",
+          "response_reason": "Taken after breakfast.",
+          "version": 5
+        },
+        "meta": {
+          "correlation_id": "req_01JY5P19GG2A91Q5HSNMD5SQ80",
+          "server_time": "2026-06-24T16:20:01Z",
+          "next_cursor": null
+        },
+        "error": null
+      }
+    },
+    {
+      "name": "create_measurement_request_blood_pressure",
+      "kind": "request",
+      "operation_id": "create_measurement",
+      "content_type": "application/json",
+      "payload": {
+        "measurement_type": "blood_pressure",
+        "measured_at": "2026-06-24T06:30:00Z",
+        "timezone": "Asia/Bangkok",
+        "source": "manual",
+        "recorded_by_user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+        "note": "Measured before breakfast.",
+        "value": {
+          "unit": "mmHg",
+          "systolic": 132,
+          "diastolic": 84
+        }
+      }
+    },
+    {
+      "name": "create_measurement_response",
+      "kind": "response",
+      "operation_id": "create_measurement",
+      "status": 201,
+      "content_type": "application/json",
+      "payload": {
+        "data": {
+          "measurement_id": "msm_01JY5P1J1VGQDZ7AAT2B51RYNT",
+          "patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+          "measurement_type": "blood_pressure",
+          "measured_at": "2026-06-24T06:30:00Z",
+          "timezone": "Asia/Bangkok",
+          "source": "manual",
+          "recorded_by_user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+          "note": "Measured before breakfast.",
+          "value": {
+            "unit": "mmHg",
+            "systolic": 132,
+            "diastolic": 84
+          },
+          "version": 1,
+          "created_at": "2026-06-24T16:25:00Z",
+          "updated_at": "2026-06-24T16:25:00Z"
+        },
+        "meta": {
+          "correlation_id": "req_01JY5P1N3TB5EK7G2YE6BP2RSC",
+          "server_time": "2026-06-24T16:25:00Z",
+          "next_cursor": null
+        },
+        "error": null
+      }
+    },
+    {
+      "name": "measurement_validation_error_response",
+      "kind": "response",
+      "operation_id": "create_measurement",
+      "status": 422,
+      "content_type": "application/json",
+      "payload": {
+        "data": null,
+        "meta": {
+          "correlation_id": "req_01JY5P1GN8DFQ6CSTNKA2Y0SXW",
+          "server_time": "2026-06-24T16:11:00Z",
+          "next_cursor": null
+        },
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "The measurement value or unit is not accepted for the selected measurement type.",
+          "fields": [
+            {
+              "path": "/value/unit",
+              "code": "INVALID_UNIT"
+            },
+            {
+              "path": "/value/glucose",
+              "code": "OUT_OF_RANGE"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

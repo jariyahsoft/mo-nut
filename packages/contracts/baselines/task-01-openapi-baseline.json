@@ -1,0 +1,2213 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Mo-nut API",
+    "version": "1.0.0-task01",
+    "summary": "Contract-first API for Mo-nut Phase 1 and Phase 2 clients.",
+    "description": "This OpenAPI 3.1 document defines the canonical HTTP API surface for Mo-nut.\nContract payloads intentionally use snake_case for transport consistency across\ngenerated clients and offline mutation envelopes.\n"
+  },
+  "servers": [
+    {
+      "url": "https://{environment_host}/api/v1",
+      "variables": {
+        "environment_host": {
+          "default": "api.dev.mo-nut.local"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "identity",
+      "description": "Session exchange, profile, and session management."
+    },
+    {
+      "name": "patients",
+      "description": "Patient profile and emergency information."
+    },
+    {
+      "name": "consents",
+      "description": "Consent documents and patient consent records."
+    }
+  ],
+  "security": [
+    {
+      "bearer_auth": []
+    }
+  ],
+  "paths": {
+    "/auth/session/exchange": {
+      "post": {
+        "tags": ["identity"],
+        "operationId": "exchange_session",
+        "summary": "Exchange an external identity token for a Mo-nut session.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/x_correlation_id"
+          },
+          {
+            "$ref": "#/components/parameters/x_client_platform"
+          },
+          {
+            "$ref": "#/components/parameters/x_app_version"
+          },
+          {
+            "$ref": "#/components/parameters/accept_language"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/session_exchange_request"
+              },
+              "examples": {
+                "phone_otp": {
+                  "value": {
+                    "identity_provider": "phone_otp",
+                    "identity_token": "otp_session_01JY5M2A8FQ6J2B4E7PK5W4RDT",
+                    "device": {
+                      "device_name": "Pixel 8",
+                      "platform": "android",
+                      "app_version": "0.1.0",
+                      "locale": "th-TH"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session created and active profile resolved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/session_exchange_response"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "data": {
+                        "session": {
+                          "session_id": "ses_01JY5M2H9RQY8MDX6V8P7EXN2X",
+                          "user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+                          "status": "active",
+                          "issued_at": "2026-06-24T14:40:00Z",
+                          "expires_at": "2026-06-24T20:40:00Z",
+                          "last_seen_at": "2026-06-24T14:40:00Z",
+                          "device_name": "Pixel 8",
+                          "platform": "android",
+                          "current": true
+                        },
+                        "me": {
+                          "user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+                          "display_name": "Anan Chaiyo",
+                          "account_status": "active",
+                          "roles": ["patient"],
+                          "active_patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+                          "locale": "th-TH",
+                          "preferences": {
+                            "font_scale": "large",
+                            "high_contrast_mode": false,
+                            "notification_privacy": "minimal"
+                          },
+                          "patient_ids": ["pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1"],
+                          "security_events": [
+                            {
+                              "event_type": "new_device",
+                              "occurred_at": "2026-06-24T14:40:00Z",
+                              "source": "android"
+                            }
+                          ],
+                          "version": 3
+                        }
+                      },
+                      "meta": {
+                        "correlation_id": "req_01JY5M2NW7T3TK7SK0G7D81V82",
+                        "server_time": "2026-06-24T14:40:00Z",
+                        "next_cursor": null
+                      },
+                      "error": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/suspended_account"
+          },
+          "422": {
+            "$ref": "#/components/responses/validation_failed"
+          }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "tags": ["identity"],
+        "operationId": "get_me",
+        "summary": "Get the active Mo-nut profile context for the authenticated user.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/x_correlation_id"
+          },
+          {
+            "$ref": "#/components/parameters/x_client_platform"
+          },
+          {
+            "$ref": "#/components/parameters/x_app_version"
+          },
+          {
+            "$ref": "#/components/parameters/accept_language"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active profile context.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/me_response"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "data": {
+                        "user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+                        "display_name": "Anan Chaiyo",
+                        "account_status": "active",
+                        "roles": ["patient"],
+                        "active_patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+                        "locale": "th-TH",
+                        "preferences": {
+                          "font_scale": "large",
+                          "high_contrast_mode": false,
+                          "notification_privacy": "minimal"
+                        },
+                        "patient_ids": ["pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1"],
+                        "security_events": [
+                          {
+                            "event_type": "session_revoked",
+                            "occurred_at": "2026-06-23T18:15:00Z",
+                            "source": "web"
+                          }
+                        ],
+                        "version": 3
+                      },
+                      "meta": {
+                        "correlation_id": "req_01JY5M79FY34XVD4X71H3SN0ZV",
+                        "server_time": "2026-06-24T15:05:00Z",
+                        "next_cursor": null
+                      },
+                      "error": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/auth_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/suspended_account"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["identity"],
+        "operationId": "patch_me",
+        "summary": "Update user-level locale and accessibility preferences.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/x_correlation_id"
+          },
+          {
+            "$ref": "#/components/parameters/x_client_platform"
+          },
+          {
+            "$ref": "#/components/parameters/x_app_version"
+          },
+          {
+            "$ref": "#/components/parameters/accept_language"
+          },
+          {
+            "$ref": "#/components/parameters/if_match"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/patch_me_request"
+              },
+              "examples": {
+                "success": {
+                  "value": {
+                    "locale": "th-TH",
+                    "preferences": {
+                      "font_scale": "extra_large",
+                      "high_contrast_mode": true,
+                      "notification_privacy": "hidden"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/me_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/auth_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/forbidden_scope"
+          },
+          "409": {
+            "$ref": "#/components/responses/version_conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/validation_failed"
+          }
+        }
+      }
+    },
+    "/me/sessions": {
+      "get": {
+        "tags": ["identity"],
+        "operationId": "list_sessions",
+        "summary": "List the active and recently revoked sessions for the authenticated user.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/x_correlation_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sessions listed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/session_list_response"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "data": {
+                        "sessions": [
+                          {
+                            "session_id": "ses_01JY5M2H9RQY8MDX6V8P7EXN2X",
+                            "user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+                            "status": "active",
+                            "issued_at": "2026-06-24T14:40:00Z",
+                            "expires_at": "2026-06-24T20:40:00Z",
+                            "last_seen_at": "2026-06-24T15:10:00Z",
+                            "device_name": "Pixel 8",
+                            "platform": "android",
+                            "current": true
+                          },
+                          {
+                            "session_id": "ses_01JY5M9M69SNXGBKC65A3XVND7",
+                            "user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+                            "status": "revoked",
+                            "issued_at": "2026-06-22T08:00:00Z",
+                            "expires_at": "2026-06-22T14:00:00Z",
+                            "last_seen_at": "2026-06-22T08:21:00Z",
+                            "device_name": "iPhone 15",
+                            "platform": "ios",
+                            "current": false
+                          }
+                        ]
+                      },
+                      "meta": {
+                        "correlation_id": "req_01JY5M8W2HVXPQWQ8P0DT4E4S4",
+                        "server_time": "2026-06-24T15:10:00Z",
+                        "next_cursor": null
+                      },
+                      "error": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/auth_required"
+          }
+        }
+      }
+    },
+    "/me/sessions/{session_id}/revoke": {
+      "post": {
+        "tags": ["identity"],
+        "operationId": "revoke_session",
+        "summary": "Revoke one session for the authenticated user.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/x_correlation_id"
+          },
+          {
+            "$ref": "#/components/parameters/idempotency_key"
+          },
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "ses_01JY5M9M69SNXGBKC65A3XVND7"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Session revoke command accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/command_ack_response"
+                },
+                "examples": {
+                  "accepted": {
+                    "value": {
+                      "data": {
+                        "command_id": "cmd_01JY5M9XQSV5AZSC4XTTXXZG9P",
+                        "status": "accepted",
+                        "resource_id": "ses_01JY5M9M69SNXGBKC65A3XVND7"
+                      },
+                      "meta": {
+                        "correlation_id": "req_01JY5M9YWWF3NSVF8RQTTZTS3X",
+                        "server_time": "2026-06-24T15:11:00Z",
+                        "next_cursor": null
+                      },
+                      "error": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/auth_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/forbidden_scope"
+          }
+        }
+      }
+    },
+    "/consent-documents/{document_key}": {
+      "get": {
+        "tags": ["consents"],
+        "operationId": "get_consent_document",
+        "summary": "Get the active consent document template for a given key.",
+        "parameters": [
+          {
+            "name": "document_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "caregiver_access_v1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consent document retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/consent_document_response"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "data": {
+                        "document_key": "caregiver_access_v1",
+                        "document_version": "1.0.0",
+                        "title": "Caregiver Access Consent",
+                        "locale": "th-TH",
+                        "summary": "Grant scoped appointment and medication access to a caregiver.",
+                        "disclosure_text": "Access can be revoked at any time and does not allow medication changes without explicit scope.",
+                        "required_scopes": [
+                          "appointment.read",
+                          "medication.read",
+                          "report.create"
+                        ]
+                      },
+                      "meta": {
+                        "correlation_id": "req_01JY5MA6FJ2MSN5YR2Q6B8M6X2",
+                        "server_time": "2026-06-24T15:12:00Z",
+                        "next_cursor": null
+                      },
+                      "error": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/auth_required"
+          }
+        }
+      }
+    },
+    "/patients": {
+      "get": {
+        "tags": ["patients"],
+        "operationId": "list_patients",
+        "summary": "List the patients available in the active user context.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/x_correlation_id"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/cursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Patient list retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/patient_list_response"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "data": {
+                        "patients": [
+                          {
+                            "patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+                            "display_name": "Somjai Chaiyo",
+                            "birth_date": "1955-02-14",
+                            "gender": "female",
+                            "blood_type": "O",
+                            "language": "th-TH",
+                            "font_scale": "large",
+                            "account_owner_user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+                            "conditions": [
+                              {
+                                "condition_id": "cond_htn",
+                                "name": "Hypertension",
+                                "status": "active",
+                                "diagnosed_on": "2018-08-11"
+                              }
+                            ],
+                            "allergies": [
+                              {
+                                "allergy_id": "alg_penicillin",
+                                "substance": "Penicillin",
+                                "category": "drug",
+                                "reaction": "rash",
+                                "severity": "moderate"
+                              }
+                            ],
+                            "emergency_contacts": [
+                              {
+                                "contact_id": "emc_malee",
+                                "name": "Malee Chaiyo",
+                                "relationship": "daughter",
+                                "phone_number": "+66811112222",
+                                "priority": 1
+                              }
+                            ],
+                            "record_numbers": [
+                              {
+                                "facility_name": "Chiang Mai Heart Center",
+                                "patient_record_number": "HN-240624-001"
+                              }
+                            ],
+                            "emergency_card_settings": {
+                              "share_blood_type": true,
+                              "share_allergies": true,
+                              "share_contacts": true
+                            },
+                            "version": 6,
+                            "created_at": "2026-06-24T14:40:00Z",
+                            "updated_at": "2026-06-24T14:50:00Z"
+                          }
+                        ]
+                      },
+                      "meta": {
+                        "correlation_id": "req_01JY5MAX2AX3QAWZ463Z5A5M0N",
+                        "server_time": "2026-06-24T15:13:00Z",
+                        "next_cursor": null
+                      },
+                      "error": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/auth_required"
+          }
+        }
+      },
+      "post": {
+        "tags": ["patients"],
+        "operationId": "create_patient",
+        "summary": "Create a patient profile for the authenticated account owner.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/x_correlation_id"
+          },
+          {
+            "$ref": "#/components/parameters/idempotency_key"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/create_patient_request"
+              },
+              "examples": {
+                "success": {
+                  "value": {
+                    "display_name": "Somjai Chaiyo",
+                    "birth_date": "1955-02-14",
+                    "gender": "female",
+                    "blood_type": "O",
+                    "language": "th-TH",
+                    "font_scale": "large",
+                    "conditions": [
+                      {
+                        "condition_id": "cond_htn",
+                        "name": "Hypertension",
+                        "status": "active",
+                        "diagnosed_on": "2018-08-11"
+                      }
+                    ],
+                    "allergies": [
+                      {
+                        "allergy_id": "alg_penicillin",
+                        "substance": "Penicillin",
+                        "category": "drug",
+                        "reaction": "rash",
+                        "severity": "moderate"
+                      }
+                    ],
+                    "emergency_contacts": [
+                      {
+                        "contact_id": "emc_malee",
+                        "name": "Malee Chaiyo",
+                        "relationship": "daughter",
+                        "phone_number": "+66811112222",
+                        "priority": 1
+                      }
+                    ],
+                    "record_numbers": [
+                      {
+                        "facility_name": "Chiang Mai Heart Center",
+                        "patient_record_number": "HN-240624-001"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Patient profile created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/patient_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/auth_required"
+          },
+          "409": {
+            "$ref": "#/components/responses/version_conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/validation_failed"
+          }
+        }
+      }
+    },
+    "/patients/{patient_id}": {
+      "get": {
+        "tags": ["patients"],
+        "operationId": "get_patient",
+        "summary": "Get a patient profile and emergency details.",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1"
+          },
+          {
+            "$ref": "#/components/parameters/x_correlation_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Patient profile retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/patient_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/auth_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/forbidden_scope"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["patients"],
+        "operationId": "patch_patient",
+        "summary": "Update mutable patient profile fields using optimistic concurrency.",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1"
+          },
+          {
+            "$ref": "#/components/parameters/x_correlation_id"
+          },
+          {
+            "$ref": "#/components/parameters/if_match"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/patch_patient_request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Patient profile updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/patient_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/auth_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/forbidden_scope"
+          },
+          "409": {
+            "$ref": "#/components/responses/version_conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/validation_failed"
+          }
+        }
+      }
+    },
+    "/patients/{patient_id}/consents": {
+      "get": {
+        "tags": ["consents"],
+        "operationId": "list_patient_consents",
+        "summary": "List consent records scoped to a patient.",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consent records retrieved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/consent_list_response"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "data": {
+                        "consents": [
+                          {
+                            "consent_id": "cst_01JY5M5A50JQKJQFETR8XFBQ0J",
+                            "patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+                            "document_key": "caregiver_access_v1",
+                            "document_version": "1.0.0",
+                            "grantee_type": "caregiver",
+                            "grantee_id": "usr_01JY5M590PHYX4VM87QY5PN2S9",
+                            "purposes": [
+                              "appointment_support",
+                              "medication_reminders"
+                            ],
+                            "scopes": [
+                              "patient.read",
+                              "appointment.write",
+                              "medication.read"
+                            ],
+                            "status": "active",
+                            "accepted_at": "2026-06-24T15:00:00Z",
+                            "expires_at": "2027-06-24T15:00:00Z",
+                            "version": 1
+                          }
+                        ]
+                      },
+                      "meta": {
+                        "correlation_id": "req_01JY5MBQSZCJW7XFX0P13KKJBC",
+                        "server_time": "2026-06-24T15:14:00Z",
+                        "next_cursor": null
+                      },
+                      "error": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/auth_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/forbidden_scope"
+          }
+        }
+      },
+      "post": {
+        "tags": ["consents"],
+        "operationId": "create_patient_consent",
+        "summary": "Create a consent record for a patient.",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1"
+          },
+          {
+            "$ref": "#/components/parameters/x_correlation_id"
+          },
+          {
+            "$ref": "#/components/parameters/idempotency_key"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/create_consent_request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Consent record created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/consent_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/auth_required"
+          },
+          "403": {
+            "$ref": "#/components/responses/forbidden_scope"
+          },
+          "409": {
+            "$ref": "#/components/responses/version_conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/validation_failed"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer_auth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Application session token or verified bearer token issued by Mo-nut."
+      }
+    },
+    "parameters": {
+      "x_correlation_id": {
+        "name": "X-Correlation-Id",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Optional end-to-end correlation identifier."
+      },
+      "x_client_platform": {
+        "name": "X-Client-Platform",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "enum": ["web", "android", "ios"]
+        }
+      },
+      "x_app_version": {
+        "name": "X-App-Version",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "accept_language": {
+        "name": "Accept-Language",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "idempotency_key": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 8
+        }
+      },
+      "if_match": {
+        "name": "If-Match",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Entity version token used for optimistic concurrency."
+      },
+      "limit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "cursor": {
+        "name": "cursor",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "auth_required": {
+        "description": "Authentication is required.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/error_response"
+            },
+            "examples": {
+              "unauthenticated": {
+                "value": {
+                  "data": null,
+                  "meta": {
+                    "correlation_id": "req_01JY5MBZKDPY2BF3HMM9W3M9S6",
+                    "server_time": "2026-06-24T15:15:00Z",
+                    "next_cursor": null
+                  },
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Authentication is required to access this resource.",
+                    "fields": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "forbidden_scope": {
+        "description": "The authenticated actor lacks the required role, scope, or consent.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/error_response"
+            },
+            "examples": {
+              "forbidden": {
+                "value": {
+                  "data": null,
+                  "meta": {
+                    "correlation_id": "req_01JY5MC8X6VK4KRW8EKQ9RPX1Y",
+                    "server_time": "2026-06-24T15:16:00Z",
+                    "next_cursor": null
+                  },
+                  "error": {
+                    "code": "FORBIDDEN_SCOPE",
+                    "message": "The active role or consent scope does not permit this action.",
+                    "fields": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "suspended_account": {
+        "description": "The account is suspended and cannot continue.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/error_response"
+            },
+            "examples": {
+              "suspended": {
+                "value": {
+                  "data": null,
+                  "meta": {
+                    "correlation_id": "req_01JY5MCJ0M0YG0Y7S58TR2B2S0",
+                    "server_time": "2026-06-24T15:17:00Z",
+                    "next_cursor": null
+                  },
+                  "error": {
+                    "code": "ACCOUNT_SUSPENDED",
+                    "message": "This account is suspended and must complete recovery before access is restored.",
+                    "fields": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "validation_failed": {
+        "description": "The payload or domain fields are invalid.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/error_response"
+            },
+            "examples": {
+              "validation": {
+                "value": {
+                  "data": null,
+                  "meta": {
+                    "correlation_id": "req_01JY5MCRH2HQXAGCY4EXQJCE1B",
+                    "server_time": "2026-06-24T15:18:00Z",
+                    "next_cursor": null
+                  },
+                  "error": {
+                    "code": "VALIDATION_FAILED",
+                    "message": "One or more request fields are invalid.",
+                    "fields": [
+                      {
+                        "path": "/display_name",
+                        "code": "REQUIRED"
+                      },
+                      {
+                        "path": "/emergency_contacts/0/phone_number",
+                        "code": "INVALID_PHONE_NUMBER"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "version_conflict": {
+        "description": "The submitted entity version is stale.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/error_response"
+            },
+            "examples": {
+              "conflict": {
+                "value": {
+                  "data": null,
+                  "meta": {
+                    "correlation_id": "req_01JY5MD16NS0NMN9N050Y6FHBR",
+                    "server_time": "2026-06-24T15:19:00Z",
+                    "next_cursor": null
+                  },
+                  "error": {
+                    "code": "VERSION_CONFLICT",
+                    "message": "The resource was updated by another session.",
+                    "fields": [
+                      {
+                        "path": "/version",
+                        "code": "STALE_VALUE"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "api_meta": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["correlation_id", "server_time", "next_cursor"],
+        "properties": {
+          "correlation_id": {
+            "type": "string"
+          },
+          "server_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "next_cursor": {
+            "type": ["string", "null"]
+          }
+        },
+        "example": {
+          "correlation_id": "req_01JY5M2NW7T3TK7SK0G7D81V82",
+          "server_time": "2026-06-24T14:40:00Z",
+          "next_cursor": null
+        }
+      },
+      "field_error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "code"],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "api_error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message", "fields"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "AUTH_REQUIRED",
+              "FORBIDDEN_SCOPE",
+              "RESOURCE_NOT_FOUND",
+              "VALIDATION_FAILED",
+              "VALIDATION_ERROR",
+              "VERSION_CONFLICT",
+              "IDEMPOTENCY_CONFLICT",
+              "RATE_LIMITED",
+              "DEPENDENCY_UNAVAILABLE",
+              "PROCESSING_PENDING",
+              "ACCOUNT_SUSPENDED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/field_error"
+            }
+          }
+        }
+      },
+      "error_response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta", "error"],
+        "properties": {
+          "data": {
+            "type": "null"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/api_meta"
+          },
+          "error": {
+            "$ref": "#/components/schemas/api_error"
+          }
+        }
+      },
+      "account_status": {
+        "type": "string",
+        "enum": ["active", "suspended", "recovery_required"]
+      },
+      "notification_privacy": {
+        "type": "string",
+        "enum": ["minimal", "hidden"]
+      },
+      "font_scale": {
+        "type": "string",
+        "enum": ["default", "large", "extra_large"]
+      },
+      "platform": {
+        "type": "string",
+        "enum": ["web", "android", "ios"]
+      },
+      "role": {
+        "type": "string",
+        "enum": [
+          "patient",
+          "caregiver",
+          "clinician",
+          "org_staff",
+          "admin",
+          "support"
+        ]
+      },
+      "security_event": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["event_type", "occurred_at", "source"],
+        "properties": {
+          "event_type": {
+            "type": "string",
+            "enum": [
+              "failed_login",
+              "new_device",
+              "session_revoked",
+              "recovery_started"
+            ]
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "string",
+            "enum": ["web", "android", "ios", "backend"]
+          }
+        }
+      },
+      "me_preferences": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "font_scale",
+          "high_contrast_mode",
+          "notification_privacy"
+        ],
+        "properties": {
+          "font_scale": {
+            "$ref": "#/components/schemas/font_scale"
+          },
+          "high_contrast_mode": {
+            "type": "boolean"
+          },
+          "notification_privacy": {
+            "$ref": "#/components/schemas/notification_privacy"
+          }
+        }
+      },
+      "me_profile": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "user_id",
+          "display_name",
+          "account_status",
+          "roles",
+          "active_patient_id",
+          "locale",
+          "preferences",
+          "patient_ids",
+          "security_events",
+          "version"
+        ],
+        "properties": {
+          "user_id": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "account_status": {
+            "$ref": "#/components/schemas/account_status"
+          },
+          "roles": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/role"
+            }
+          },
+          "active_patient_id": {
+            "type": ["string", "null"]
+          },
+          "locale": {
+            "type": "string"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/me_preferences"
+          },
+          "patient_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "security_events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/security_event"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "example": {
+          "user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+          "display_name": "Anan Chaiyo",
+          "account_status": "active",
+          "roles": ["patient"],
+          "active_patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+          "locale": "th-TH",
+          "preferences": {
+            "font_scale": "large",
+            "high_contrast_mode": false,
+            "notification_privacy": "minimal"
+          },
+          "patient_ids": ["pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1"],
+          "security_events": [
+            {
+              "event_type": "new_device",
+              "occurred_at": "2026-06-24T14:40:00Z",
+              "source": "android"
+            }
+          ],
+          "version": 3
+        }
+      },
+      "device_session": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "session_id",
+          "user_id",
+          "status",
+          "issued_at",
+          "expires_at",
+          "last_seen_at",
+          "device_name",
+          "platform",
+          "current"
+        ],
+        "properties": {
+          "session_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "revoked"]
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_seen_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "device_name": {
+            "type": "string"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/platform"
+          },
+          "current": {
+            "type": "boolean"
+          }
+        }
+      },
+      "session_exchange_request": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["identity_provider", "identity_token", "device"],
+        "properties": {
+          "identity_provider": {
+            "type": "string",
+            "enum": ["phone_otp", "email_passwordless", "google", "apple"]
+          },
+          "identity_token": {
+            "type": "string",
+            "minLength": 10
+          },
+          "device": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["device_name", "platform", "app_version", "locale"],
+            "properties": {
+              "device_name": {
+                "type": "string"
+              },
+              "platform": {
+                "$ref": "#/components/schemas/platform"
+              },
+              "app_version": {
+                "type": "string"
+              },
+              "locale": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "session_exchange_response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta", "error"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["session", "me"],
+            "properties": {
+              "session": {
+                "$ref": "#/components/schemas/device_session"
+              },
+              "me": {
+                "$ref": "#/components/schemas/me_profile"
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/api_meta"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "me_response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta", "error"],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/me_profile"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/api_meta"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "patch_me_request": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["locale", "preferences"],
+        "properties": {
+          "locale": {
+            "type": "string"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/me_preferences"
+          }
+        }
+      },
+      "session_list_response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta", "error"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sessions"],
+            "properties": {
+              "sessions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/device_session"
+                }
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/api_meta"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "command_ack": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["command_id", "status", "resource_id"],
+        "properties": {
+          "command_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["accepted"]
+          },
+          "resource_id": {
+            "type": "string"
+          }
+        }
+      },
+      "command_ack_response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta", "error"],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/command_ack"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/api_meta"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "consent_document": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "document_key",
+          "document_version",
+          "title",
+          "locale",
+          "summary",
+          "disclosure_text",
+          "required_scopes"
+        ],
+        "properties": {
+          "document_key": {
+            "type": "string"
+          },
+          "document_version": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "disclosure_text": {
+            "type": "string"
+          },
+          "required_scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "example": {
+          "document_key": "caregiver_access_v1",
+          "document_version": "1.0.0",
+          "title": "Caregiver Access Consent",
+          "locale": "th-TH",
+          "summary": "Grant scoped appointment and medication access to a caregiver.",
+          "disclosure_text": "Access can be revoked at any time and does not allow medication changes without explicit scope.",
+          "required_scopes": [
+            "appointment.read",
+            "medication.read",
+            "report.create"
+          ]
+        }
+      },
+      "consent_record": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "consent_id",
+          "patient_id",
+          "document_key",
+          "document_version",
+          "grantee_type",
+          "grantee_id",
+          "purposes",
+          "scopes",
+          "status",
+          "accepted_at",
+          "expires_at",
+          "version"
+        ],
+        "properties": {
+          "consent_id": {
+            "type": "string"
+          },
+          "patient_id": {
+            "type": "string"
+          },
+          "document_key": {
+            "type": "string"
+          },
+          "document_version": {
+            "type": "string"
+          },
+          "grantee_type": {
+            "type": "string",
+            "enum": ["caregiver", "clinician", "org_staff"]
+          },
+          "grantee_id": {
+            "type": "string"
+          },
+          "purposes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "active", "suspended", "revoked", "expired"]
+          },
+          "accepted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "example": {
+          "consent_id": "cst_01JY5M5A50JQKJQFETR8XFBQ0J",
+          "patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+          "document_key": "caregiver_access_v1",
+          "document_version": "1.0.0",
+          "grantee_type": "caregiver",
+          "grantee_id": "usr_01JY5M590PHYX4VM87QY5PN2S9",
+          "purposes": ["appointment_support", "medication_reminders"],
+          "scopes": ["patient.read", "appointment.write", "medication.read"],
+          "status": "active",
+          "accepted_at": "2026-06-24T15:00:00Z",
+          "expires_at": "2027-06-24T15:00:00Z",
+          "version": 1
+        }
+      },
+      "condition": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["condition_id", "name", "status", "diagnosed_on"],
+        "properties": {
+          "condition_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "resolved", "monitoring"]
+          },
+          "diagnosed_on": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "example": {
+          "condition_id": "cond_htn",
+          "name": "Hypertension",
+          "status": "active",
+          "diagnosed_on": "2018-08-11"
+        }
+      },
+      "allergy": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "allergy_id",
+          "substance",
+          "category",
+          "reaction",
+          "severity"
+        ],
+        "properties": {
+          "allergy_id": {
+            "type": "string"
+          },
+          "substance": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["drug", "food", "environment"]
+          },
+          "reaction": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["mild", "moderate", "severe"]
+          }
+        },
+        "example": {
+          "allergy_id": "alg_penicillin",
+          "substance": "Penicillin",
+          "category": "drug",
+          "reaction": "rash",
+          "severity": "moderate"
+        }
+      },
+      "emergency_contact": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "contact_id",
+          "name",
+          "relationship",
+          "phone_number",
+          "priority"
+        ],
+        "properties": {
+          "contact_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "relationship": {
+            "type": "string"
+          },
+          "phone_number": {
+            "type": "string",
+            "pattern": "^\\+[1-9][0-9]{7,14}$"
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "example": {
+          "contact_id": "emc_malee",
+          "name": "Malee Chaiyo",
+          "relationship": "daughter",
+          "phone_number": "+66811112222",
+          "priority": 1
+        }
+      },
+      "record_number": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["facility_name", "patient_record_number"],
+        "properties": {
+          "facility_name": {
+            "type": "string"
+          },
+          "patient_record_number": {
+            "type": "string"
+          }
+        }
+      },
+      "emergency_card_settings": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["share_blood_type", "share_allergies", "share_contacts"],
+        "properties": {
+          "share_blood_type": {
+            "type": "boolean"
+          },
+          "share_allergies": {
+            "type": "boolean"
+          },
+          "share_contacts": {
+            "type": "boolean"
+          }
+        }
+      },
+      "patient_profile": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "patient_id",
+          "display_name",
+          "birth_date",
+          "gender",
+          "blood_type",
+          "language",
+          "font_scale",
+          "account_owner_user_id",
+          "conditions",
+          "allergies",
+          "emergency_contacts",
+          "record_numbers",
+          "emergency_card_settings",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "patient_id": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "birth_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "gender": {
+            "type": "string",
+            "enum": ["female", "male", "non_binary", "undisclosed"]
+          },
+          "blood_type": {
+            "type": "string",
+            "enum": ["A", "B", "AB", "O", "unknown"]
+          },
+          "language": {
+            "type": "string"
+          },
+          "font_scale": {
+            "$ref": "#/components/schemas/font_scale"
+          },
+          "account_owner_user_id": {
+            "type": "string"
+          },
+          "conditions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/condition"
+            }
+          },
+          "allergies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/allergy"
+            }
+          },
+          "emergency_contacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/emergency_contact"
+            }
+          },
+          "record_numbers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/record_number"
+            }
+          },
+          "emergency_card_settings": {
+            "$ref": "#/components/schemas/emergency_card_settings"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "example": {
+          "patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+          "display_name": "Somjai Chaiyo",
+          "birth_date": "1955-02-14",
+          "gender": "female",
+          "blood_type": "O",
+          "language": "th-TH",
+          "font_scale": "large",
+          "account_owner_user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+          "conditions": [
+            {
+              "condition_id": "cond_htn",
+              "name": "Hypertension",
+              "status": "active",
+              "diagnosed_on": "2018-08-11"
+            }
+          ],
+          "allergies": [
+            {
+              "allergy_id": "alg_penicillin",
+              "substance": "Penicillin",
+              "category": "drug",
+              "reaction": "rash",
+              "severity": "moderate"
+            }
+          ],
+          "emergency_contacts": [
+            {
+              "contact_id": "emc_malee",
+              "name": "Malee Chaiyo",
+              "relationship": "daughter",
+              "phone_number": "+66811112222",
+              "priority": 1
+            }
+          ],
+          "record_numbers": [
+            {
+              "facility_name": "Chiang Mai Heart Center",
+              "patient_record_number": "HN-240624-001"
+            }
+          ],
+          "emergency_card_settings": {
+            "share_blood_type": true,
+            "share_allergies": true,
+            "share_contacts": true
+          },
+          "version": 6,
+          "created_at": "2026-06-24T14:40:00Z",
+          "updated_at": "2026-06-24T14:50:00Z"
+        }
+      },
+      "create_patient_request": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "display_name",
+          "birth_date",
+          "gender",
+          "blood_type",
+          "language",
+          "font_scale",
+          "conditions",
+          "allergies",
+          "emergency_contacts",
+          "record_numbers"
+        ],
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "birth_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "gender": {
+            "type": "string",
+            "enum": ["female", "male", "non_binary", "undisclosed"]
+          },
+          "blood_type": {
+            "type": "string",
+            "enum": ["A", "B", "AB", "O", "unknown"]
+          },
+          "language": {
+            "type": "string"
+          },
+          "font_scale": {
+            "$ref": "#/components/schemas/font_scale"
+          },
+          "conditions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/condition"
+            }
+          },
+          "allergies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/allergy"
+            }
+          },
+          "emergency_contacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/emergency_contact"
+            }
+          },
+          "record_numbers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/record_number"
+            }
+          }
+        }
+      },
+      "patch_patient_request": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "language": {
+            "type": "string"
+          },
+          "font_scale": {
+            "$ref": "#/components/schemas/font_scale"
+          },
+          "conditions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/condition"
+            }
+          },
+          "allergies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/allergy"
+            }
+          },
+          "emergency_contacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/emergency_contact"
+            }
+          },
+          "record_numbers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/record_number"
+            }
+          },
+          "emergency_card_settings": {
+            "$ref": "#/components/schemas/emergency_card_settings"
+          }
+        },
+        "minProperties": 1
+      },
+      "patient_response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta", "error"],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/patient_profile"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/api_meta"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "patient_list_response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta", "error"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["patients"],
+            "properties": {
+              "patients": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/patient_profile"
+                }
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/api_meta"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "create_consent_request": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "document_key",
+          "document_version",
+          "grantee_type",
+          "grantee_id",
+          "purposes",
+          "scopes",
+          "accepted_at"
+        ],
+        "properties": {
+          "document_key": {
+            "type": "string"
+          },
+          "document_version": {
+            "type": "string"
+          },
+          "grantee_type": {
+            "type": "string",
+            "enum": ["caregiver", "clinician", "org_staff"]
+          },
+          "grantee_id": {
+            "type": "string"
+          },
+          "purposes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "scopes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "accepted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        }
+      },
+      "consent_response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta", "error"],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/consent_record"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/api_meta"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "consent_list_response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta", "error"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["consents"],
+            "properties": {
+              "consents": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/consent_record"
+                }
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/api_meta"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "consent_document_response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta", "error"],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/consent_document"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/api_meta"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  }
+}

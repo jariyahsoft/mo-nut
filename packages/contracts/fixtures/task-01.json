@@ -1,0 +1,211 @@
+{
+  "task": "01",
+  "cases": [
+    {
+      "name": "session_exchange_request",
+      "kind": "request",
+      "operation_id": "exchange_session",
+      "content_type": "application/json",
+      "payload": {
+        "identity_provider": "phone_otp",
+        "identity_token": "otp_session_01JY5M2A8FQ6J2B4E7PK5W4RDT",
+        "device": {
+          "device_name": "Pixel 8",
+          "platform": "android",
+          "app_version": "0.1.0",
+          "locale": "th-TH"
+        }
+      }
+    },
+    {
+      "name": "session_exchange_response",
+      "kind": "response",
+      "operation_id": "exchange_session",
+      "status": 200,
+      "content_type": "application/json",
+      "payload": {
+        "data": {
+          "session": {
+            "session_id": "ses_01JY5M2H9RQY8MDX6V8P7EXN2X",
+            "user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+            "status": "active",
+            "issued_at": "2026-06-24T14:40:00Z",
+            "expires_at": "2026-06-24T20:40:00Z",
+            "last_seen_at": "2026-06-24T14:40:00Z",
+            "device_name": "Pixel 8",
+            "platform": "android",
+            "current": true
+          },
+          "me": {
+            "user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+            "display_name": "Anan Chaiyo",
+            "account_status": "active",
+            "roles": ["patient"],
+            "active_patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+            "locale": "th-TH",
+            "preferences": {
+              "font_scale": "large",
+              "high_contrast_mode": false,
+              "notification_privacy": "minimal"
+            },
+            "patient_ids": ["pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1"],
+            "security_events": [
+              {
+                "event_type": "new_device",
+                "occurred_at": "2026-06-24T14:40:00Z",
+                "source": "android"
+              }
+            ],
+            "version": 3
+          }
+        },
+        "meta": {
+          "correlation_id": "req_01JY5M2NW7T3TK7SK0G7D81V82",
+          "server_time": "2026-06-24T14:40:00Z",
+          "next_cursor": null
+        },
+        "error": null
+      }
+    },
+    {
+      "name": "create_patient_request",
+      "kind": "request",
+      "operation_id": "create_patient",
+      "content_type": "application/json",
+      "payload": {
+        "display_name": "Somjai Chaiyo",
+        "birth_date": "1955-02-14",
+        "gender": "female",
+        "blood_type": "O",
+        "language": "th-TH",
+        "font_scale": "large",
+        "conditions": [
+          {
+            "condition_id": "cond_htn",
+            "name": "Hypertension",
+            "status": "active",
+            "diagnosed_on": "2018-08-11"
+          }
+        ],
+        "allergies": [
+          {
+            "allergy_id": "alg_penicillin",
+            "substance": "Penicillin",
+            "category": "drug",
+            "reaction": "rash",
+            "severity": "moderate"
+          }
+        ],
+        "emergency_contacts": [
+          {
+            "contact_id": "emc_malee",
+            "name": "Malee Chaiyo",
+            "relationship": "daughter",
+            "phone_number": "+66811112222",
+            "priority": 1
+          }
+        ],
+        "record_numbers": [
+          {
+            "facility_name": "Chiang Mai Heart Center",
+            "patient_record_number": "HN-240624-001"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_patient_response",
+      "kind": "response",
+      "operation_id": "get_patient",
+      "status": 200,
+      "content_type": "application/json",
+      "payload": {
+        "data": {
+          "patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+          "display_name": "Somjai Chaiyo",
+          "birth_date": "1955-02-14",
+          "gender": "female",
+          "blood_type": "O",
+          "language": "th-TH",
+          "font_scale": "large",
+          "account_owner_user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+          "conditions": [
+            {
+              "condition_id": "cond_htn",
+              "name": "Hypertension",
+              "status": "active",
+              "diagnosed_on": "2018-08-11"
+            }
+          ],
+          "allergies": [
+            {
+              "allergy_id": "alg_penicillin",
+              "substance": "Penicillin",
+              "category": "drug",
+              "reaction": "rash",
+              "severity": "moderate"
+            }
+          ],
+          "emergency_contacts": [
+            {
+              "contact_id": "emc_malee",
+              "name": "Malee Chaiyo",
+              "relationship": "daughter",
+              "phone_number": "+66811112222",
+              "priority": 1
+            }
+          ],
+          "record_numbers": [
+            {
+              "facility_name": "Chiang Mai Heart Center",
+              "patient_record_number": "HN-240624-001"
+            }
+          ],
+          "emergency_card_settings": {
+            "share_blood_type": true,
+            "share_allergies": true,
+            "share_contacts": true
+          },
+          "version": 6,
+          "created_at": "2026-06-24T14:40:00Z",
+          "updated_at": "2026-06-24T14:50:00Z"
+        },
+        "meta": {
+          "correlation_id": "req_01JY5M54E1FWRM3ASJTDAVY75W",
+          "server_time": "2026-06-24T14:50:00Z",
+          "next_cursor": null
+        },
+        "error": null
+      }
+    },
+    {
+      "name": "create_consent_response",
+      "kind": "response",
+      "operation_id": "create_patient_consent",
+      "status": 201,
+      "content_type": "application/json",
+      "payload": {
+        "data": {
+          "consent_id": "cst_01JY5M5A50JQKJQFETR8XFBQ0J",
+          "patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+          "document_key": "caregiver_access_v1",
+          "document_version": "1.0.0",
+          "grantee_type": "caregiver",
+          "grantee_id": "usr_01JY5M590PHYX4VM87QY5PN2S9",
+          "purposes": ["appointment_support", "medication_reminders"],
+          "scopes": ["patient.read", "appointment.write", "medication.read"],
+          "status": "active",
+          "accepted_at": "2026-06-24T15:00:00Z",
+          "expires_at": "2027-06-24T15:00:00Z",
+          "version": 1
+        },
+        "meta": {
+          "correlation_id": "req_01JY5M5E9CEYB1GS1X0GTAE1AK",
+          "server_time": "2026-06-24T15:00:00Z",
+          "next_cursor": null
+        },
+        "error": null
+      }
+    }
+  ]
+}

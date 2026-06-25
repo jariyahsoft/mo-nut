@@ -43,6 +43,7 @@ Primary objective:
 - Continue until every feasible task in the requested range is fully implemented and verified.
 - Work on exactly one task at a time.
 - Do all exploration, implementation, review, and verification in the main agent.
+- Send a Telegram notification when each task attempt starts, when Telegram is enabled.
 - Send a Telegram notification when each task reaches a terminal status or encounters an execution error.
 - Do not stop after completing a single task in the range.
 - Do not ask the user for routine confirmation, implementation choices, or permission between tasks in the range.
@@ -86,7 +87,7 @@ Before starting the first task:
 4. Build a dependency-aware task queue from each in-range task's Prerequisites section.
 5. Determine completion from repository evidence and verification results, not merely from task numbering or an old progress entry.
 6. Skip an in-range task only when its implementation and Definition of Done are already demonstrably complete; record why it was skipped.
-7. Initialize Telegram notification state by checking whether TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID were provided in the user invocation and are non-empty, without printing, logging, persisting, or exposing their values. Initialize telegram_terminal_keys and the sent/disabled/failed counters.
+7. Initialize Telegram notification state by checking whether TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID were provided in the user invocation and are non-empty, without printing, logging, persisting, or exposing their values. Initialize telegram_started_keys, telegram_terminal_keys, and the sent/disabled/failed counters.
 
 ## Telegram Notifications
 
@@ -102,12 +103,19 @@ At startup, check only whether both values are present and non-empty. Never prin
 Maintain these values in the main-agent context for the current run:
 
 - telegram_enabled: true only when both invocation values exist and are non-empty.
+- telegram_started_keys: a set of task-attempt start events for which delivery has already been attempted, used to prevent duplicate sends and repeated retries.
 - telegram_terminal_keys: a set of terminal events for which delivery has already been attempted, used to prevent duplicate sends and repeated retries.
 - telegram_sent_count
 - telegram_disabled_count
 - telegram_failed_count
 
-Use a unique notification key in this form:
+Use a unique start notification key in this form:
+
+<task-number>:<attempt-number>:STARTED
+
+Before sending a start notification, check telegram_started_keys. If the key is absent, add it immediately before the first HTTP attempt. The HTTP client may perform only the single configured retry. Do not attempt that start event again later, whether delivery succeeds or fails.
+
+Use a unique terminal notification key in this form:
 
 <task-number>:<attempt-number>:<terminal-status>
 
@@ -115,29 +123,37 @@ Before sending, check telegram_terminal_keys. If the key is absent, add it immed
 
 ### When to notify
 
+Send exactly one start notification for each task attempt:
+
+- 🚀STARTED: immediately before exploration or implementation of that task attempt begins.
+
 Send exactly one terminal notification for each task attempt:
 
-- COMPLETED: after implementation and verification succeed.
-- ALREADY COMPLETE: after repository evidence and verification prove that no implementation is required.
-- BLOCKED: when a genuine external or dependency blocker prevents completion.
-- ERROR: when an unexpected command, test, or execution failure ends the current attempt.
+- ✅COMPLETED: after implementation and verification succeed.
+- ✳️ALREADY COMPLETE: after repository evidence and verification prove that no implementation is required.
+- ⛔️BLOCKED: when a genuine external or dependency blocker prevents completion.
+- ❌ERROR: when an unexpected command, test, or execution failure ends the current attempt.
 
 Do not send ERROR for an individual command failure that is safely recovered within the same attempt. In that case, continue the task and send only its final terminal notification. Do not send both ERROR and BLOCKED for the same unchanged failure event.
 
-Send the terminal notification before starting the next task. Telegram delivery is best-effort and must never change the implementation status of a task.
+Send the start notification before beginning the task attempt. Send the terminal notification before starting the next task. Telegram delivery is best-effort and must never change the implementation status of a task.
 
 ### Message format
 
 Use concise plain-text messages:
 
 [Mo-nut Task Runner]
-Status: COMPLETED | ALREADY COMPLETE | BLOCKED | ERROR
+Status: 🚀STARTED | ✅COMPLETED | ✳️ALREADY COMPLETE | ⛔️BLOCKED | ❌ERROR
 Task: <task number> - <task title>
 Agent: main
 Validation: <short pass/fail/blocked summary>
 Time: <ISO-8601 timestamp with timezone>
 
-For ERROR or BLOCKED, add:
+For 🚀STARTED, Validation should be a short message such as:
+
+Validation: starting task attempt
+
+For ❌ERROR or ⛔️BLOCKED, add:
 
 Reason: <one short sanitized reason>
 
@@ -221,6 +237,8 @@ Perform these stages strictly in order.
 3. Inspect current implementation, likely affected files, risks, and verification commands.
 4. Capture concise findings in your working context before editing.
 
+Before Stage 1 begins for a task attempt, send exactly one 🚀STARTED Telegram notification when telegram_enabled is true.
+
 If an in-range prerequisite is incomplete, return that prerequisite task to the front of the dependency queue. If the prerequisite is out of range and not already complete, mark the current task BLOCKED.
 
 Do not implement multiple numbered tasks inside one pass.
@@ -299,7 +317,7 @@ When a task has a genuine external blocker:
 - Complete every safe and testable portion of the task.
 - Record the exact blocker and required owner action in tasks-update.md.
 - Mark the task blocked rather than completed.
-- Send one BLOCKED Telegram notification with a short sanitized reason.
+- Send one ⛔️BLOCKED Telegram notification with a short sanitized reason.
 - Continue with other dependency-ready tasks in range that do not depend on the blocker.
 - Revisit blocked in-range tasks after each full pass because another completed in-range task may unblock them.
 
@@ -307,7 +325,7 @@ When an unexpected command, test, or execution error prevents the current task a
 
 - Capture a concise sanitized error summary without secrets, PHI, raw stack traces, or large logs.
 - End the current attempt with status ERROR.
-- Send exactly one ERROR Telegram notification using the current task number and attempt number.
+- Send exactly one ❌ERROR Telegram notification using the current task number and attempt number.
 - Record the error, notification result, and recoverable next action in tasks-update.md.
 - Apply safe local recovery in a new attempt when possible; increment the attempt number before retrying.
 - If recovery is not possible, leave the task blocked for a later pass, but do not send an additional BLOCKED notification for the same unchanged failure event.

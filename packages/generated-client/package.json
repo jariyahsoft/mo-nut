@@ -1,0 +1,17 @@
+{
+  "name": "@mo-nut/generated-client",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "lint": "node ../../tools/lint.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test ./test/*.test.mjs"
+  },
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "26.0.0"
+  }
+}

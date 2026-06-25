@@ -1,0 +1,22 @@
+{
+  "name": "@mo-nut/contracts",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "generate-client": "node ./scripts/generate-client.mjs",
+    "mock-server": "node ./scripts/mock-server.mjs",
+    "check-breaking": "node ./scripts/check-breaking.mjs",
+    "check-generated": "node ./scripts/check-generated.mjs",
+    "lint": "node ../../tools/lint.mjs",
+    "save-baseline": "node ./scripts/save-baseline.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test ./test/*.test.mjs",
+    "validate": "node ./scripts/validate-openapi.mjs"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "12.1.0",
+    "@types/node": "26.0.0",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1"
+  }
+}

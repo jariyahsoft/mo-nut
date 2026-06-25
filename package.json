@@ -1,0 +1,38 @@
+{
+  "name": "mo-nut",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=22.20.0",
+    "pnpm": ">=11.9.0"
+  },
+  "scripts": {
+    "format": "prettier --check apps packages tools .github README.md package.json tsconfig.base.json pnpm-workspace.yaml",
+    "format:write": "prettier --write apps packages tools .github README.md package.json tsconfig.base.json pnpm-workspace.yaml",
+    "api:validate": "pnpm --filter @mo-nut/contracts run validate",
+    "api:generate": "pnpm --filter @mo-nut/contracts run generate-client",
+    "api:mock": "pnpm --filter @mo-nut/contracts run mock-server",
+    "api:check-breaking": "pnpm --filter @mo-nut/contracts run check-breaking",
+    "api:check-generated": "pnpm --filter @mo-nut/contracts run check-generated",
+    "api:contract-ci": "pnpm api:validate && pnpm api:generate && pnpm api:check-generated && pnpm api:check-breaking",
+    "firebase:validate": "node tools/firebase-validate.mjs",
+    "firebase:auth:smoke": "node tools/firebase-run-auth-smoke.mjs",
+    "firebase:emulators": "firebase emulators:start --config infra/firebase/firebase.json --project demo-mo-nut-local",
+    "firebase:rules:test": "pnpm --filter @mo-nut/firebase-rules run test",
+    "lint": "node tools/lint.mjs",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "test": "pnpm -r --if-present run test",
+    "build": "pnpm -r --if-present run build",
+    "dev:web": "pnpm --filter @mo-nut/web run dev",
+    "dev:api": "pnpm --filter @mo-nut/api run dev"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "5.0.1",
+    "@types/node": "26.0.0",
+    "firebase": "12.15.0",
+    "firebase-tools": "15.22.1",
+    "openapi-typescript-codegen": "0.31.0",
+    "prettier": "3.8.4",
+    "typescript": "6.0.3"
+  }
+}

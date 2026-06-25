@@ -1,0 +1,68 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function patientDocPath(patientId) {
+      return /databases/(default)/documents/patients/$(patientId);
+    }
+
+    function patientOwnerUid(patientId) {
+      return firestore.get(patientDocPath(patientId)).data.accountOwnerUserId;
+    }
+
+    function caregiverAccessDoc(patientId) {
+      return firestore.get(/databases/(default)/documents/patients/$(patientId)/caregiverAccess/$(request.auth.uid));
+    }
+
+    function patientExists(patientId) {
+      return firestore.exists(patientDocPath(patientId));
+    }
+
+    function hasPatientAssetWriteScope(patientId) {
+      return firestore.exists(/databases/(default)/documents/patients/$(patientId)/caregiverAccess/$(request.auth.uid)) &&
+        caregiverAccessDoc(patientId).data.accessStatus == "active" &&
+        caregiverAccessDoc(patientId).data.scopes.hasAny(["asset.write"]);
+    }
+
+    function isAllowedContentType() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp)') ||
+        request.resource.contentType.matches('application/pdf') ||
+        request.resource.contentType.matches('audio/(mpeg|mp4|wav|x-wav|webm)');
+    }
+
+    function hasValidChecksum() {
+      return request.resource.metadata.checksum_sha256.matches('^[A-Fa-f0-9]{64}$');
+    }
+
+    function hasPrivateAssetBoundary() {
+      return request.resource.metadata.scan_status == "pending" &&
+        request.resource.metadata.upload_origin == "signed-upload" &&
+        request.resource.metadata.access_channel == "backend-signed-url" &&
+        request.resource.metadata.phi_boundary == "restricted";
+    }
+
+    function hasValidAssetId(assetId) {
+      return assetId.matches('^[A-Za-z0-9][A-Za-z0-9._-]{7,127}$');
+    }
+
+    match /private/patients/{patientId}/uploads/{assetId} {
+      allow read: if false;
+      allow create: if isSignedIn() &&
+        patientExists(patientId) &&
+        hasValidAssetId(assetId) &&
+        (patientOwnerUid(patientId) == request.auth.uid || hasPatientAssetWriteScope(patientId)) &&
+        request.resource.size < 5242880 &&
+        isAllowedContentType() &&
+        hasValidChecksum() &&
+        hasPrivateAssetBoundary();
+      allow update, delete: if false;
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

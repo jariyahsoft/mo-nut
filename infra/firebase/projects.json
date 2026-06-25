@@ -1,0 +1,29 @@
+{
+  "default_environment": "local",
+  "environments": {
+    "local": {
+      "project_id": "demo-mo-nut-local",
+      "storage_bucket": "demo-mo-nut-local.appspot.com",
+      "use_emulators": true,
+      "allow_production_operations": false
+    },
+    "development": {
+      "project_id": "mo-nut-dev",
+      "storage_bucket": "mo-nut-dev.appspot.com",
+      "use_emulators": false,
+      "allow_production_operations": false
+    },
+    "staging": {
+      "project_id": "mo-nut-staging",
+      "storage_bucket": "mo-nut-staging.appspot.com",
+      "use_emulators": false,
+      "allow_production_operations": false
+    },
+    "production": {
+      "project_id": "mo-nut-prod",
+      "storage_bucket": "mo-nut-prod.appspot.com",
+      "use_emulators": false,
+      "allow_production_operations": true
+    }
+  }
+}

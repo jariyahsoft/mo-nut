@@ -1,0 +1,21 @@
+{
+  "email_password": {
+    "enabled": true,
+    "environments": ["local", "development", "staging", "production"]
+  },
+  "google": {
+    "enabled": true,
+    "environments": ["local", "development", "staging", "production"],
+    "local_testing": "auth_emulator_manual_idp_credential"
+  },
+  "phone_otp": {
+    "enabled_by_default": false,
+    "feature_flag": "ENABLE_PHONE_OTP",
+    "environments": ["staging", "production"]
+  },
+  "privileged_role_mfa": {
+    "required": true,
+    "roles": ["admin", "auditor", "support"],
+    "second_factor": "totp_or_sms"
+  }
+}

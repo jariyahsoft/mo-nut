@@ -1,0 +1,13 @@
+{
+  "name": "@mo-nut/firebase-rules",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "lint": "node ../../tools/lint.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node ./test/run-emulator-tests.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "26.0.0"
+  }
+}

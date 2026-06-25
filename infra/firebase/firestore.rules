@@ -1,0 +1,163 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function patientPath(patientId) {
+      return /databases/$(database)/documents/patients/$(patientId);
+    }
+
+    function caregiverPath(patientId) {
+      return /databases/$(database)/documents/patients/$(patientId)/caregiverAccess/$(request.auth.uid);
+    }
+
+    function patientExists(patientId) {
+      return exists(patientPath(patientId));
+    }
+
+    function isOwner(patientId) {
+      return isSignedIn() &&
+        patientExists(patientId) &&
+        get(patientPath(patientId)).data.accountOwnerUserId == request.auth.uid;
+    }
+
+    function caregiverHasScope(patientId, scope) {
+      return isSignedIn() &&
+        exists(caregiverPath(patientId)) &&
+        get(caregiverPath(patientId)).data.accessStatus == "active" &&
+        get(caregiverPath(patientId)).data.scopes.hasAny([scope]);
+    }
+
+    function canReadPatient(patientId) {
+      return isOwner(patientId) || caregiverHasScope(patientId, "patient.read");
+    }
+
+    match /patients/{patientId} {
+      allow create: if isSignedIn() &&
+        request.resource.data.accountOwnerUserId == request.auth.uid;
+      allow read: if canReadPatient(patientId);
+      allow update, delete: if isOwner(patientId) &&
+        request.resource.data.accountOwnerUserId == resource.data.accountOwnerUserId;
+
+      match /caregiverAccess/{caregiverUserId} {
+        allow read: if isOwner(patientId) || request.auth.uid == caregiverUserId;
+        allow write: if isOwner(patientId);
+      }
+
+      match /appointments/{appointmentId} {
+        allow read: if canReadPatient(patientId);
+        allow write: if false;
+      }
+
+      match /documentAssets/{assetId} {
+        allow read, write: if false;
+      }
+
+      match /measurements/{measurementId} {
+        allow read, write: if false;
+      }
+
+      match /medications/{medicationId} {
+        allow read, write: if false;
+      }
+
+      match /notificationDeliveries/{deliveryId} {
+        allow read, write: if false;
+      }
+
+      match /processingJobs/{jobId} {
+        allow read, write: if false;
+      }
+
+      match /reports/{reportId} {
+        allow read, write: if false;
+      }
+
+      match /shareLinks/{shareLinkId} {
+        allow read, write: if false;
+      }
+
+      match /sosEvents/{sosId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /appointments/{appointmentId} {
+      allow read, write: if false;
+    }
+
+    match /audit_events/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /care_relationships/{relationshipId} {
+      allow read, write: if false;
+    }
+
+    match /checklists/{checklistId} {
+      allow read, write: if false;
+    }
+
+    match /checklist_occurrences/{occurrenceId} {
+      allow read, write: if false;
+    }
+
+    match /consent_grants/{grantId} {
+      allow read, write: if false;
+    }
+
+    match /document_assets/{assetId} {
+      allow read, write: if false;
+    }
+
+    match /dose_occurrences/{doseId} {
+      allow read, write: if false;
+    }
+
+    match /health_measurements/{measurementId} {
+      allow read, write: if false;
+    }
+
+    match /medications/{medicationId} {
+      allow read, write: if false;
+    }
+
+    match /medication_schedules/{scheduleId} {
+      allow read, write: if false;
+    }
+
+    match /notification_deliveries/{deliveryId} {
+      allow read, write: if false;
+    }
+
+    match /permission_grants/{grantId} {
+      allow read, write: if false;
+    }
+
+    match /processing_jobs/{jobId} {
+      allow read, write: if false;
+    }
+
+    match /report_jobs/{reportId} {
+      allow read, write: if false;
+    }
+
+    match /share_links/{shareLinkId} {
+      allow read, write: if false;
+    }
+
+    match /sync_operations/{operationId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

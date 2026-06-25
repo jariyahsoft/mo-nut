@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "local": "demo-mo-nut-local",
+    "development": "mo-nut-dev",
+    "staging": "mo-nut-staging",
+    "production": "mo-nut-prod"
+  }
+}

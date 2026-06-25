@@ -1,0 +1,13 @@
+{
+  "patient": {
+    "email": "patient.local@example.test",
+    "password": "CorrectHorseBattery9!",
+    "display_name": "Somjai Demo"
+  },
+  "caregiver_google": {
+    "provider_id": "google.com",
+    "email": "caregiver.local@example.test",
+    "display_name": "Malee Demo",
+    "subject": "google-caregiver-local-01"
+  }
+}

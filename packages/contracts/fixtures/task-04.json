@@ -1,0 +1,256 @@
+{
+  "task": "04",
+  "cases": [
+    {
+      "name": "create_asset_upload_request",
+      "kind": "request",
+      "operation_id": "create_asset_upload",
+      "content_type": "application/json",
+      "payload": {
+        "category": "appointment_document",
+        "mime_type": "image/jpeg",
+        "file_size_bytes": 248123,
+        "checksum_sha256": "af1d8a402f9dd4375ddf5bce730f6a65f7aeeab7d85cb8a98fd0ce2cb8f0c517",
+        "capture_source": "camera"
+      }
+    },
+    {
+      "name": "create_asset_upload_response",
+      "kind": "response",
+      "operation_id": "create_asset_upload",
+      "status": 201,
+      "content_type": "application/json",
+      "payload": {
+        "data": {
+          "asset_id": "ast_01JY5Q0AXF1FYF2SR2KFK9MJ06",
+          "patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+          "category": "appointment_document",
+          "mime_type": "image/jpeg",
+          "file_size_bytes": 248123,
+          "upload_target": {
+            "upload_url": "https://uploads.mo-nut.local/object/ast_01JY5Q0AXF1FYF2SR2KFK9MJ06",
+            "upload_expires_at": "2026-06-24T16:45:00Z",
+            "max_upload_size_bytes": 5242880
+          }
+        },
+        "meta": {
+          "correlation_id": "req_01JY5Q0EJ4EP0S7XHCKH0B2RKB",
+          "server_time": "2026-06-24T16:35:00Z",
+          "next_cursor": null
+        },
+        "error": null
+      }
+    },
+    {
+      "name": "create_ocr_job_response",
+      "kind": "response",
+      "operation_id": "create_ocr_job",
+      "status": 202,
+      "content_type": "application/json",
+      "payload": {
+        "data": {
+          "job_id": "job_01JY5Q0JZQYGRVQXAZD4R7867D",
+          "asset_id": "ast_01JY5Q0AXF1FYF2SR2KFK9MJ06",
+          "job_type": "ocr",
+          "status": "queued",
+          "provider_name": "ocr_sandbox",
+          "provider_model_version": "2026.06",
+          "retryable": true,
+          "draft_id": null,
+          "created_at": "2026-06-24T16:36:00Z",
+          "updated_at": "2026-06-24T16:36:00Z"
+        },
+        "meta": {
+          "correlation_id": "req_01JY5Q0NXYSSSESK6A5PVTBX4X",
+          "server_time": "2026-06-24T16:36:00Z",
+          "next_cursor": null
+        },
+        "error": null
+      }
+    },
+    {
+      "name": "confirm_processing_draft_request",
+      "kind": "request",
+      "operation_id": "confirm_processing_draft",
+      "content_type": "application/json",
+      "payload": {
+        "target_type": "appointment",
+        "confirmed_by_user_id": "usr_01JY5M2EPQGAX9ZK8AQ3PQ3T75",
+        "fields": {
+          "scheduled_at": "2026-07-01T02:00:00Z",
+          "facility_name": "Chiang Mai Heart Center"
+        }
+      }
+    },
+    {
+      "name": "create_report_response",
+      "kind": "response",
+      "operation_id": "create_report",
+      "status": 202,
+      "content_type": "application/json",
+      "payload": {
+        "data": {
+          "report_id": "rpt_01JY5Q1B9W0TWJY0V6WFXB9M4W",
+          "patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+          "scopes": ["appointments", "medications", "measurements"],
+          "status": "queued",
+          "expires_at": null,
+          "asset_id": null,
+          "created_at": "2026-06-24T16:50:00Z"
+        },
+        "meta": {
+          "correlation_id": "req_01JY5Q1E2ZJ3WGQX1PV2XHB8D7",
+          "server_time": "2026-06-24T16:50:00Z",
+          "next_cursor": null
+        },
+        "error": null
+      }
+    },
+    {
+      "name": "public_share_expired_response",
+      "kind": "response",
+      "operation_id": "get_public_share",
+      "status": 410,
+      "content_type": "application/json",
+      "payload": {
+        "data": null,
+        "meta": {
+          "correlation_id": "req_01JY5Q154FASV3GR4B6TCCFSG3",
+          "server_time": "2026-06-24T16:41:00Z",
+          "next_cursor": null
+        },
+        "error": {
+          "code": "SHARE_EXPIRED",
+          "message": "This share link is no longer active.",
+          "fields": []
+        }
+      }
+    },
+    {
+      "name": "notification_preferences_response",
+      "kind": "response",
+      "operation_id": "get_notification_preferences",
+      "status": 200,
+      "content_type": "application/json",
+      "payload": {
+        "data": {
+          "privacy_level": "minimal",
+          "quiet_hours_start": "22:00",
+          "quiet_hours_end": "06:00",
+          "push_enabled": true,
+          "caregiver_escalation_enabled": true
+        },
+        "meta": {
+          "correlation_id": "req_01JY5Q1PPNCQGBKH4A0KF4BME1",
+          "server_time": "2026-06-24T16:55:00Z",
+          "next_cursor": null
+        },
+        "error": null
+      }
+    },
+    {
+      "name": "create_sos_response_partial_failure",
+      "kind": "response",
+      "operation_id": "create_sos_event",
+      "status": 202,
+      "content_type": "application/json",
+      "payload": {
+        "data": {
+          "sos_id": "sos_01JY5Q2AMR5QXJK7W9MKANW1K2",
+          "patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+          "status": "active",
+          "disclosure_note": "Mo-nut is not an emergency medical service.",
+          "allowed_channels": ["call", "sms", "push"],
+          "channel_statuses": [
+            {
+              "channel": "call",
+              "delivery_status": "unavailable",
+              "detail": "Fallback to direct dial required."
+            },
+            {
+              "channel": "sms",
+              "delivery_status": "sent",
+              "detail": "SMS sent to primary caregiver."
+            },
+            {
+              "channel": "push",
+              "delivery_status": "failed",
+              "detail": "Push provider unavailable."
+            }
+          ],
+          "initiated_at": "2026-06-24T17:00:00Z",
+          "closed_at": null
+        },
+        "meta": {
+          "correlation_id": "req_01JY5Q2F4YNW9ZN8SH3YJ0NK6Y",
+          "server_time": "2026-06-24T17:00:00Z",
+          "next_cursor": null
+        },
+        "error": null
+      }
+    },
+    {
+      "name": "sync_batch_request",
+      "kind": "request",
+      "operation_id": "sync_batch",
+      "content_type": "application/json",
+      "payload": {
+        "mutations": [
+          {
+            "client_mutation_id": "mut_01JY5Q2N7W0SNV5Y0M8W3PRB2D",
+            "mutation_type": "dose.respond",
+            "base_version": 4,
+            "idempotency_key": "idem_dose_001",
+            "payload": {
+              "dose_id": "dos_01JY5P15W06MZ8A8AQ3QYWQ5J5",
+              "action": "taken"
+            }
+          },
+          {
+            "client_mutation_id": "mut_01JY5Q2Q1TJB0W9Y0R6FQ0K7XR",
+            "mutation_type": "measurement.create",
+            "base_version": null,
+            "idempotency_key": "idem_measurement_001",
+            "payload": {
+              "measurement_type": "weight",
+              "amount": 68.4
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "sync_batch_response_partial",
+      "kind": "response",
+      "operation_id": "sync_batch",
+      "status": 200,
+      "content_type": "application/json",
+      "payload": {
+        "data": {
+          "results": [
+            {
+              "client_mutation_id": "mut_01JY5Q2N7W0SNV5Y0M8W3PRB2D",
+              "outcome": "applied",
+              "retryable": false,
+              "server_resource_id": "dos_01JY5P15W06MZ8A8AQ3QYWQ5J5",
+              "error_code": null
+            },
+            {
+              "client_mutation_id": "mut_01JY5Q2Q1TJB0W9Y0R6FQ0K7XR",
+              "outcome": "retryable_failure",
+              "retryable": true,
+              "server_resource_id": null,
+              "error_code": "DEPENDENCY_UNAVAILABLE"
+            }
+          ]
+        },
+        "meta": {
+          "correlation_id": "req_01JY5Q2TRQCRZFX3Q2YQZ3VT18",
+          "server_time": "2026-06-24T17:05:00Z",
+          "next_cursor": null
+        },
+        "error": null
+      }
+    }
+  ]
+}

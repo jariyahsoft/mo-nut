@@ -1,0 +1,233 @@
+{
+  "task": "02",
+  "cases": [
+    {
+      "name": "create_caregiver_invitation_request",
+      "kind": "request",
+      "operation_id": "create_caregiver_invitation",
+      "content_type": "application/json",
+      "payload": {
+        "invitation_channel": "sms",
+        "invitee_contact": "+66817778888",
+        "invitee_display_name": "Malee Chaiyo",
+        "relationship_role": "primary",
+        "permission_scopes": [
+          "patient.read",
+          "appointment.write",
+          "medication.read"
+        ],
+        "expires_at": "2026-06-30T15:30:00Z"
+      }
+    },
+    {
+      "name": "create_caregiver_invitation_response",
+      "kind": "response",
+      "operation_id": "create_caregiver_invitation",
+      "status": 201,
+      "content_type": "application/json",
+      "payload": {
+        "data": {
+          "invitation_id": "cin_01JY5N1K1CQ0QWS4E0QZBRB7A2",
+          "patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+          "invitation_channel": "sms",
+          "invitee_contact": "+66817778888",
+          "invitee_display_name": "Malee Chaiyo",
+          "relationship_role": "primary",
+          "permission_scopes": [
+            "patient.read",
+            "appointment.write",
+            "medication.read"
+          ],
+          "status": "pending",
+          "expires_at": "2026-06-30T15:30:00Z",
+          "created_at": "2026-06-24T15:30:00Z",
+          "invitation_token_preview": "mn_inv_7b32"
+        },
+        "meta": {
+          "correlation_id": "req_01JY5N1QM5THMPE8X03FJ78M4A",
+          "server_time": "2026-06-24T15:30:00Z",
+          "next_cursor": null
+        },
+        "error": null
+      }
+    },
+    {
+      "name": "accept_caregiver_invitation_request",
+      "kind": "request",
+      "operation_id": "accept_caregiver_invitation",
+      "content_type": "application/json",
+      "payload": {
+        "invitation_token": "mn_inv_live_4b2af8fa01"
+      }
+    },
+    {
+      "name": "accept_caregiver_invitation_response",
+      "kind": "response",
+      "operation_id": "accept_caregiver_invitation",
+      "status": 200,
+      "content_type": "application/json",
+      "payload": {
+        "data": {
+          "relationship_id": "rel_01JY5N23MNM3XGQ3ZQH5CP1ZW8",
+          "patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+          "caregiver_user_id": "usr_01JY5N21CVS4SE0WQN7EBA9G7H",
+          "caregiver_display_name": "Malee Chaiyo",
+          "relationship_role": "primary",
+          "permission_scopes": [
+            "patient.read",
+            "appointment.write",
+            "medication.read"
+          ],
+          "access_status": "active",
+          "invitation_id": "cin_01JY5N1K1CQ0QWS4E0QZBRB7A2",
+          "expires_at": null,
+          "created_at": "2026-06-24T15:32:00Z",
+          "updated_at": "2026-06-24T15:32:00Z",
+          "version": 1
+        },
+        "meta": {
+          "correlation_id": "req_01JY5N27P7SKM5B3X4NFW3G9CB",
+          "server_time": "2026-06-24T15:32:00Z",
+          "next_cursor": null
+        },
+        "error": null
+      }
+    },
+    {
+      "name": "create_appointment_request",
+      "kind": "request",
+      "operation_id": "create_appointment",
+      "content_type": "application/json",
+      "payload": {
+        "scheduled_at": "2026-07-01T02:00:00Z",
+        "timezone": "Asia/Bangkok",
+        "facility_name": "Chiang Mai Heart Center",
+        "department": "Cardiology",
+        "building": "Building A",
+        "room": "402",
+        "clinician_name": "Dr. Wichai Rattanakul",
+        "notes": "Bring recent blood pressure logs.",
+        "reminders": [
+          {
+            "channel": "in_app",
+            "minutes_before": 1440
+          },
+          {
+            "channel": "web_push",
+            "minutes_before": 120
+          }
+        ],
+        "preparation_items": [
+          {
+            "item_id": "prep_fasting",
+            "label": "Fast for 8 hours before blood draw.",
+            "type": "fasting"
+          }
+        ],
+        "document_links": [
+          {
+            "asset_id": "ast_01JY5N3CP2G7TPDXKKM53M1Y4Q",
+            "label": "Referral form"
+          }
+        ],
+        "responsible_caregiver_relationship_id": "rel_01JY5N23MNM3XGQ3ZQH5CP1ZW8"
+      }
+    },
+    {
+      "name": "get_appointment_response",
+      "kind": "response",
+      "operation_id": "get_appointment",
+      "status": 200,
+      "content_type": "application/json",
+      "payload": {
+        "data": {
+          "appointment_id": "apt_01JY5N37B1H2F01B5SXMCP5SXX",
+          "patient_id": "pat_01JY5M2KGRWZKKQ0P3DKQ3A2H1",
+          "scheduled_at": "2026-07-01T02:00:00Z",
+          "timezone": "Asia/Bangkok",
+          "facility_name": "Chiang Mai Heart Center",
+          "department": "Cardiology",
+          "building": "Building A",
+          "room": "402",
+          "clinician_name": "Dr. Wichai Rattanakul",
+          "notes": "Bring recent blood pressure logs.",
+          "status": "confirmed",
+          "responsible_caregiver_relationship_id": "rel_01JY5N23MNM3XGQ3ZQH5CP1ZW8",
+          "reminders": [
+            {
+              "channel": "in_app",
+              "minutes_before": 1440
+            },
+            {
+              "channel": "web_push",
+              "minutes_before": 120
+            }
+          ],
+          "preparation_items": [
+            {
+              "item_id": "prep_fasting",
+              "label": "Fast for 8 hours before blood draw.",
+              "type": "fasting"
+            }
+          ],
+          "document_links": [
+            {
+              "asset_id": "ast_01JY5N3CP2G7TPDXKKM53M1Y4Q",
+              "label": "Referral form"
+            }
+          ],
+          "ocr_draft_ref": {
+            "draft_id": "drf_01JY5N3DP8ZWQC2NTYK3C5X16C",
+            "source_asset_id": "ast_01JY5N3CP2G7TPDXKKM53M1Y4Q"
+          },
+          "soft_deleted_at": null,
+          "version": 2,
+          "created_at": "2026-06-24T15:34:00Z",
+          "updated_at": "2026-06-24T15:36:00Z"
+        },
+        "meta": {
+          "correlation_id": "req_01JY5N3G2GKQ6PGTC433W8R3G4",
+          "server_time": "2026-06-24T15:36:00Z",
+          "next_cursor": null
+        },
+        "error": null
+      }
+    },
+    {
+      "name": "transition_appointment_request",
+      "kind": "request",
+      "operation_id": "transition_appointment",
+      "content_type": "application/json",
+      "payload": {
+        "target_status": "arrived",
+        "reason": "Patient checked in at the reception desk.",
+        "transition_occurred_at": "2026-07-01T01:58:00Z"
+      }
+    },
+    {
+      "name": "invalid_transition_response",
+      "kind": "response",
+      "operation_id": "transition_appointment",
+      "status": 409,
+      "content_type": "application/json",
+      "payload": {
+        "data": null,
+        "meta": {
+          "correlation_id": "req_01JY5N4VWKEJ0ADY44F3K72TVW",
+          "server_time": "2026-06-24T15:41:00Z",
+          "next_cursor": null
+        },
+        "error": {
+          "code": "INVALID_STATE_TRANSITION",
+          "message": "The appointment cannot move from completed back to confirmed.",
+          "fields": [
+            {
+              "path": "/target_status",
+              "code": "INVALID_TRANSITION"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

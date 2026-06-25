@@ -1,0 +1,9 @@
+{
+  "version": "2026-06-24-task07-v2",
+  "owner": "main",
+  "notes": [
+    "Indexes cover caregiver access review, appointment timelines, consent lookups, dose queues, measurement history, processing job workers, and notification delivery history.",
+    "Protected PHI collections remain backend-controlled even when indexes exist for server-side query paths.",
+    "Storage downloads stay private and must be served through short-lived backend-issued access rather than direct client reads."
+  ]
+}

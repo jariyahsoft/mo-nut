@@ -1,0 +1,23 @@
+{
+  "name": "@mo-nut/api",
+  "private": true,
+  "scripts": {
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "lint": "node ../../tools/lint.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test ./test/*.test.mjs"
+  },
+  "dependencies": {
+    "@nestjs/common": "11.1.27",
+    "@nestjs/core": "11.1.27",
+    "@nestjs/platform-express": "11.1.27",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "11.0.23",
+    "@types/node": "26.0.0"
+  }
+}
