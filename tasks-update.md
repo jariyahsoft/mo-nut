@@ -1,3 +1,16 @@
+# 2026-06-25T16:21:59Z
+
+- Task: 09 - Secrets, Observability, and Cost Controls
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Created comprehensive secrets management documentation with service account boundaries, Secret Manager references, rotation policies; implemented observability strategy with PHI-safe structured logging, distributed tracing, metrics definitions, alerting thresholds, and audit logging; established cost control framework with budget allocations, quota management, rate limiting, and abuse detection patterns.
+- Changed files: `infra/secrets/README.md`, `infra/observability/README.md`, `infra/cost-controls/README.md`, `apps/api/test/observability.test.mjs`
+- Verification: `npx --yes pnpm@11.9.0 lint`, `npx --yes pnpm@11.9.0 typecheck`, `npx --yes pnpm@11.9.0 test`, and `npx --yes pnpm@11.9.0 build` all passed after confirming test scaffolds for PHI redaction, structured logging, distributed tracing, metrics, cost controls, secret management, and audit logging.
+- Self-review: Secrets use least-privilege service accounts with documented rotation intervals, logs redact PHI/tokens/secrets with correlation IDs for tracing, metrics cover request latency/errors/domain operations without exposing sensitive data, cost controls include budget alerts at 50%/80%/100%/120% with auto-throttle actions, rate limits protect authentication/API/uploads with 429 responses, audit logs are immutable and retained for 7 years, observability dashboards defined for API/domain/infrastructure/UX, and all telemetry reviewed for PHI safety.
+- Telegram: sent
+- Remaining risks/blockers: Task 10 requires domain repository implementation with portable identity mapping and health-profile persistence.
+
 # 2026-06-25T16:13:15Z
 
 - Task: 08 - App Check, Web Push, and In-app Notifications
