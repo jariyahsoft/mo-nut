@@ -92,6 +92,15 @@ importers:
         specifier: 3.0.1
         version: 3.0.1(ajv@8.20.0)
 
+  packages/domain:
+    devDependencies:
+      '@types/node':
+        specifier: 26.0.0
+        version: 26.0.0
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/firebase-rules:
     devDependencies:
       '@types/node':

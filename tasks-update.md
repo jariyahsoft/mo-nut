@@ -1,3 +1,16 @@
+# 2026-06-25T21:52:35Z
+
+- Task: 10 - Domain Metadata, User, and Patient Repositories
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Created portable domain package (@mo-nut/domain) with Firebase-independent entities and repository interfaces; implemented standard metadata utilities (UUID/ULID IDs, UTC timestamps, schema versioning, optimistic concurrency, soft-delete); implemented User, PatientProfile, HealthcareFacility, Allergy, Condition, EmergencyContact domain entities; implemented UserRepository, PatientRepository, FacilityRepository interfaces; created in-memory repository implementations with comprehensive contract tests covering CRUD, version conflicts, duplicate detection, soft delete, and cross-patient queries.
+- Changed files: `packages/domain/package.json`, `packages/domain/tsconfig.json`, `packages/domain/src/metadata.ts`, `packages/domain/src/user.ts`, `packages/domain/src/patient.ts`, `packages/domain/src/index.ts`, `packages/domain/test/repositories.test.mjs`, `packages/domain/test/scaffold.test.mjs`, `pnpm-lock.yaml`
+- Verification: `npx --yes pnpm@11.9.0 lint`, `npx --yes pnpm@11.9.0 typecheck`, `npx --yes pnpm@11.9.0 build`, and `npx --yes pnpm@11.9.0 test` all passed after confirming 9 domain repository tests covering user creation/lookup by identity, duplicate detection, version conflict enforcement, soft delete, patient owner lookup, and facility search.
+- Self-review: Domain models use portable IDs (UUID/ULID strings not Firebase DocumentReference), all timestamps are ISO 8601 UTC with IANA timezone for scheduling, repository interfaces contain no Firebase types, in-memory implementations verify CRUD operations and concurrency control, metadata helpers enforce schema versioning and soft-delete patterns, entities support DataSource tracking (manual/OCR/STT/device/system), and all tests import from compiled dist/ ensuring portability boundaries hold.
+- Telegram: sent
+- Remaining risks/blockers: Task 11 requires caregiver/consent/appointment repositories with permission-critical relationships and appointment history.
+
 # 2026-06-25T16:21:59Z
 
 - Task: 09 - Secrets, Observability, and Cost Controls
