@@ -922,4 +922,765 @@ describe('Appointment Repository', () => {
   });
 });
 
+/**
+ * In-memory Medication Repository for testing
+ */
+class InMemoryMedicationRepository {
+  constructor() {
+    this.medications = new Map();
+  }
+
+  async findById(id) {
+    return this.medications.get(id) || null;
+  }
+
+  async listPatientMedications(patientId, options = {}) {
+    let list = Array.from(this.medications.values()).filter(
+      (med) => med.patientId === patientId && !med.deletedAt
+    );
+
+    if (options.status) {
+      list = list.filter((med) => med.status === options.status);
+    }
+
+    const limit = options.limit || 50;
+    list = list.slice(0, limit);
+
+    return { medications: list, nextCursor: undefined };
+  }
+
+  async create(medication) {
+    this.medications.set(medication.id, medication);
+    return medication;
+  }
+
+  async update(medication) {
+    const existing = this.medications.get(medication.id);
+    if (!existing) {
+      throw new NotFoundError('Medication', medication.id);
+    }
+
+    if (existing.version !== medication.version - 1) {
+      throw new VersionConflictError('Medication', medication.version - 1, existing.version);
+    }
+
+    this.medications.set(medication.id, medication);
+    return medication;
+  }
+
+  async softDelete(id, deletedBy) {
+    const med = this.medications.get(id);
+    if (!med) {
+      throw new NotFoundError('Medication', id);
+    }
+    med.deletedAt = new Date().toISOString();
+    med.deletedBy = deletedBy;
+    this.medications.set(id, med);
+  }
+}
+
+/**
+ * In-memory Medication Schedule Repository for testing
+ */
+class InMemoryMedicationScheduleRepository {
+  constructor() {
+    this.schedules = new Map();
+  }
+
+  async findById(id) {
+    return this.schedules.get(id) || null;
+  }
+
+  async listMedicationSchedules(medicationId) {
+    return Array.from(this.schedules.values())
+      .filter((s) => s.medicationId === medicationId)
+      .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
+  }
+
+  async findActiveSchedule(medicationId) {
+    const schedules = await this.listMedicationSchedules(medicationId);
+    return schedules.find((s) => s.active) || null;
+  }
+
+  async create(schedule) {
+    this.schedules.set(schedule.id, schedule);
+    return schedule;
+  }
+
+  async update(schedule) {
+    const existing = this.schedules.get(schedule.id);
+    if (!existing) {
+      throw new NotFoundError('MedicationSchedule', schedule.id);
+    }
+
+    if (existing.version !== schedule.version - 1) {
+      throw new VersionConflictError('MedicationSchedule', schedule.version - 1, existing.version);
+    }
+
+    this.schedules.set(schedule.id, schedule);
+    return schedule;
+  }
+}
+
+/**
+ * In-memory Dose Repository for testing
+ */
+class InMemoryDoseRepository {
+  constructor() {
+    this.doses = new Map();
+    this.events = [];
+  }
+
+  async findById(id) {
+    return this.doses.get(id) || null;
+  }
+
+  async findByScheduleAndDueAt(scheduleId, dueAt) {
+    for (const dose of this.doses.values()) {
+      if (dose.scheduleId === scheduleId && dose.dueAt === dueAt) {
+        return dose;
+      }
+    }
+    return null;
+  }
+
+  async listPatientDoses(patientId, options = {}) {
+    let list = Array.from(this.doses.values()).filter((d) => d.patientId === patientId);
+
+    if (options.status) {
+      list = list.filter((d) => d.status === options.status);
+    }
+
+    if (options.from) {
+      list = list.filter((d) => d.dueAt >= options.from);
+    }
+
+    if (options.to) {
+      list = list.filter((d) => d.dueAt <= options.to);
+    }
+
+    list.sort((a, b) => b.dueAt.localeCompare(a.dueAt));
+
+    const limit = options.limit || 50;
+    list = list.slice(0, limit);
+
+    return { doses: list, nextCursor: undefined };
+  }
+
+  async create(dose) {
+    this.doses.set(dose.id, dose);
+    return dose;
+  }
+
+  async recordAction(occurrenceId, action, actorId, note, correctionReason) {
+    const dose = this.doses.get(occurrenceId);
+    if (!dose) {
+      throw new NotFoundError('DoseOccurrence', occurrenceId);
+    }
+
+    const now = new Date().toISOString();
+    const existingEvents = this.events.filter((e) => e.occurrenceId === occurrenceId);
+    const hasFinalAction = existingEvents.some((e) => e.eventType === 'action' || e.eventType === 'correction');
+
+    // Idempotency check: if current status is already the target action, return the most recent matching event
+    if (dose.status === action) {
+      const matchingEvent = [...existingEvents]
+        .reverse()
+        .find((e) => e.action === action);
+      if (matchingEvent) {
+        return { dose, event: matchingEvent };
+      }
+    }
+
+    let eventType = 'action';
+    if (hasFinalAction) {
+      // This is a correction
+      if (!correctionReason) {
+        throw new RepositoryError('CORRECTION_REASON_REQUIRED', 'Correction events must include a reason');
+      }
+      eventType = 'correction';
+    }
+
+    const event = {
+      ...initMetadata(actorId),
+      occurrenceId,
+      medicationId: dose.medicationId,
+      patientId: dose.patientId,
+      eventType,
+      action,
+      actorId,
+      occurredAt: now,
+      note,
+      correctionReason,
+    };
+
+    this.events.push(event);
+
+    // Update dose status
+    dose.status = action;
+    dose.respondedAt = now;
+    dose.actorId = actorId;
+    if (note) dose.note = note;
+    this.doses.set(occurrenceId, dose);
+
+    return { dose, event };
+  }
+
+  async listEvents(occurrenceId) {
+    return this.events.filter((e) => e.occurrenceId === occurrenceId);
+  }
+
+  async listMedicationEvents(medicationId) {
+    return this.events.filter((e) => e.medicationId === medicationId);
+  }
+}
+
+/**
+ * In-memory Measurement Repository for testing
+ */
+class InMemoryMeasurementRepository {
+  constructor() {
+    this.measurements = new Map();
+  }
+
+  async findById(id) {
+    return this.measurements.get(id) || null;
+  }
+
+  async listPatientMeasurements(patientId, options = {}) {
+    let list = Array.from(this.measurements.values()).filter(
+      (m) => m.patientId === patientId && !m.deletedAt
+    );
+
+    if (options.measurementType) {
+      list = list.filter((m) => m.measurementType === options.measurementType);
+    }
+
+    if (options.from) {
+      list = list.filter((m) => m.measuredAt >= options.from);
+    }
+
+    if (options.to) {
+      list = list.filter((m) => m.measuredAt <= options.to);
+    }
+
+    list.sort((a, b) => b.measuredAt.localeCompare(a.measuredAt));
+
+    const limit = options.limit || 50;
+    list = list.slice(0, limit);
+
+    return { measurements: list, nextCursor: undefined };
+  }
+
+  async create(measurement) {
+    const validation = this.validateMeasurement(measurement.measurementType, measurement.value);
+    if (!validation.valid) {
+      throw new RepositoryError('VALIDATION_FAILED', validation.errors.join(', '));
+    }
+
+    this.measurements.set(measurement.id, measurement);
+    return measurement;
+  }
+
+  async update(measurement) {
+    const existing = this.measurements.get(measurement.id);
+    if (!existing) {
+      throw new NotFoundError('HealthMeasurement', measurement.id);
+    }
+
+    if (existing.version !== measurement.version - 1) {
+      throw new VersionConflictError('HealthMeasurement', measurement.version - 1, existing.version);
+    }
+
+    const validation = this.validateMeasurement(measurement.measurementType, measurement.value);
+    if (!validation.valid) {
+      throw new RepositoryError('VALIDATION_FAILED', validation.errors.join(', '));
+    }
+
+    this.measurements.set(measurement.id, measurement);
+    return measurement;
+  }
+
+  async softDelete(id, deletedBy) {
+    const measurement = this.measurements.get(id);
+    if (!measurement) {
+      throw new NotFoundError('HealthMeasurement', id);
+    }
+    measurement.deletedAt = new Date().toISOString();
+    measurement.deletedBy = deletedBy;
+    this.measurements.set(id, measurement);
+  }
+
+  validateMeasurement(measurementType, value) {
+    const errors = [];
+
+    switch (measurementType) {
+      case 'weight':
+        if (!value.weight_kg || value.weight_kg <= 0 || value.weight_kg > 500) {
+          errors.push('Weight must be between 0 and 500 kg');
+        }
+        break;
+      case 'height':
+        if (!value.height_cm || value.height_cm <= 0 || value.height_cm > 300) {
+          errors.push('Height must be between 0 and 300 cm');
+        }
+        break;
+      case 'pulse':
+        if (!value.bpm || value.bpm <= 0 || value.bpm > 300) {
+          errors.push('Pulse must be between 0 and 300 bpm');
+        }
+        break;
+      case 'glucose':
+        if (!value.glucose_mg_dl || value.glucose_mg_dl <= 0 || value.glucose_mg_dl > 1000) {
+          errors.push('Glucose must be between 0 and 1000 mg/dL');
+        }
+        if (!value.context) {
+          errors.push('Glucose measurement requires context');
+        }
+        break;
+      case 'blood_pressure':
+        if (!value.systolic_mmhg || value.systolic_mmhg <= 0 || value.systolic_mmhg > 300) {
+          errors.push('Systolic must be between 0 and 300 mmHg');
+        }
+        if (!value.diastolic_mmhg || value.diastolic_mmhg <= 0 || value.diastolic_mmhg > 200) {
+          errors.push('Diastolic must be between 0 and 200 mmHg');
+        }
+        break;
+      default:
+        errors.push(`Unknown measurement type: ${measurementType}`);
+    }
+
+    return { valid: errors.length === 0, errors };
+  }
+}
+
+describe('Medication Repository', () => {
+  let repo;
+
+  beforeEach(() => {
+    repo = new InMemoryMedicationRepository();
+  });
+
+  it('should create and find medication by ID', async () => {
+    const medication = {
+      ...initMetadata('user-123'),
+      patientId: 'patient-123',
+      displayName: 'Metformin 500mg',
+      genericName: 'Metformin',
+      form: 'tablet',
+      strength: '500mg',
+      instructions: 'Take with food',
+      status: 'active',
+      source: 'manual',
+      images: [],
+      activeScheduleIds: [],
+    };
+
+    const created = await repo.create(medication);
+    assert.ok(created.id);
+
+    const found = await repo.findById(created.id);
+    assert.equal(found?.displayName, 'Metformin 500mg');
+  });
+
+  it('should list medications by patient and status', async () => {
+    const med1 = {
+      ...initMetadata(),
+      patientId: 'patient-123',
+      displayName: 'Med1',
+      genericName: 'Generic1',
+      form: 'tablet',
+      strength: '10mg',
+      instructions: 'Take daily',
+      status: 'active',
+      source: 'manual',
+      images: [],
+      activeScheduleIds: [],
+    };
+
+    const med2 = {
+      ...initMetadata(),
+      patientId: 'patient-123',
+      displayName: 'Med2',
+      genericName: 'Generic2',
+      form: 'capsule',
+      strength: '20mg',
+      instructions: 'Take twice daily',
+      status: 'paused',
+      source: 'manual',
+      images: [],
+      activeScheduleIds: [],
+    };
+
+    await repo.create(med1);
+    await repo.create(med2);
+
+    const allMeds = await repo.listPatientMedications('patient-123');
+    assert.equal(allMeds.medications.length, 2);
+
+    const activeMeds = await repo.listPatientMedications('patient-123', { status: 'active' });
+    assert.equal(activeMeds.medications.length, 1);
+    assert.equal(activeMeds.medications[0].displayName, 'Med1');
+  });
+});
+
+describe('Medication Schedule Repository', () => {
+  let scheduleRepo;
+  let medRepo;
+
+  beforeEach(() => {
+    scheduleRepo = new InMemoryMedicationScheduleRepository();
+    medRepo = new InMemoryMedicationRepository();
+  });
+
+  it('should preserve dose history when schedules change', async () => {
+    const medication = {
+      ...initMetadata(),
+      patientId: 'patient-123',
+      displayName: 'Med1',
+      genericName: 'Generic1',
+      form: 'tablet',
+      strength: '10mg',
+      instructions: 'Take daily',
+      status: 'active',
+      source: 'manual',
+      images: [],
+      activeScheduleIds: [],
+    };
+
+    const med = await medRepo.create(medication);
+
+    // Create initial schedule
+    const schedule1 = {
+      ...initMetadata(),
+      medicationId: med.id,
+      patternType: 'daily_times',
+      timezone: 'Asia/Bangkok',
+      localTimes: ['08:00', '20:00'],
+      effectiveFrom: new Date().toISOString(),
+      active: true,
+    };
+
+    const createdSchedule1 = await scheduleRepo.create(schedule1);
+
+    // Create new schedule that supersedes the first
+    const schedule2 = {
+      ...initMetadata(),
+      medicationId: med.id,
+      patternType: 'daily_times',
+      timezone: 'Asia/Bangkok',
+      localTimes: ['09:00', '21:00'], // Changed times
+      effectiveFrom: new Date(Date.now() + 86400000).toISOString(),
+      active: true,
+    };
+
+    await scheduleRepo.create(schedule2);
+
+    // Mark old schedule as superseded
+    const updatedSchedule1 = {
+      ...updateMetadata(createdSchedule1),
+      active: false,
+      supersededByScheduleId: schedule2.id,
+      effectiveTo: schedule2.effectiveFrom,
+    };
+
+    await scheduleRepo.update(updatedSchedule1);
+
+    // Verify both schedules exist in history
+    const history = await scheduleRepo.listMedicationSchedules(med.id);
+    assert.equal(history.length, 2);
+    assert.equal(history[0].active, true); // Newest first
+    assert.equal(history[1].active, false); // Old schedule marked inactive
+    assert.equal(history[1].supersededByScheduleId, schedule2.id);
+  });
+});
+
+describe('Dose Repository', () => {
+  let doseRepo;
+
+  beforeEach(() => {
+    doseRepo = new InMemoryDoseRepository();
+  });
+
+  it('should enforce idempotent dose actions', async () => {
+    const dose = {
+      ...initMetadata(),
+      scheduleId: 'sched-123',
+      medicationId: 'med-123',
+      patientId: 'patient-123',
+      dueAt: new Date().toISOString(),
+      timezone: 'Asia/Bangkok',
+      status: 'due',
+    };
+
+    await doseRepo.create(dose);
+
+    // Record action first time
+    const result1 = await doseRepo.recordAction(dose.id, 'taken', 'user-123', 'Took with breakfast');
+    assert.equal(result1.dose.status, 'taken');
+    assert.equal(result1.event.eventType, 'action');
+
+    // Record same action again (idempotent)
+    const result2 = await doseRepo.recordAction(dose.id, 'taken', 'user-123');
+    assert.equal(result2.dose.status, 'taken');
+    assert.equal(result2.event.id, result1.event.id); // Same event returned
+
+    const events = await doseRepo.listEvents(dose.id);
+    assert.equal(events.length, 1); // Only one action event
+  });
+
+  it('should allow correction events after first action', async () => {
+    const dose = {
+      ...initMetadata(),
+      scheduleId: 'sched-123',
+      medicationId: 'med-123',
+      patientId: 'patient-123',
+      dueAt: new Date().toISOString(),
+      timezone: 'Asia/Bangkok',
+      status: 'due',
+    };
+
+    await doseRepo.create(dose);
+
+    // Record initial action
+    await doseRepo.recordAction(dose.id, 'taken', 'user-123');
+
+    // Record correction
+    const correctionResult = await doseRepo.recordAction(
+      dose.id,
+      'skipped',
+      'user-123',
+      'Actually forgot to take it',
+      'User realized they did not actually take the medication'
+    );
+
+    assert.equal(correctionResult.dose.status, 'skipped');
+    assert.equal(correctionResult.event.eventType, 'correction');
+    assert.ok(correctionResult.event.correctionReason);
+
+    const events = await doseRepo.listEvents(dose.id);
+    assert.equal(events.length, 2); // action + correction
+    assert.equal(events[0].eventType, 'action');
+    assert.equal(events[1].eventType, 'correction');
+  });
+
+  it('should require correction reason for correction events', async () => {
+    const dose = {
+      ...initMetadata(),
+      scheduleId: 'sched-123',
+      medicationId: 'med-123',
+      patientId: 'patient-123',
+      dueAt: new Date().toISOString(),
+      timezone: 'Asia/Bangkok',
+      status: 'due',
+    };
+
+    await doseRepo.create(dose);
+
+    // Record initial action
+    await doseRepo.recordAction(dose.id, 'taken', 'user-123');
+
+    // Try to record correction without reason
+    await assert.rejects(
+      async () => await doseRepo.recordAction(dose.id, 'skipped', 'user-123'),
+      (err) => err.code === 'CORRECTION_REASON_REQUIRED'
+    );
+  });
+
+  it('should find dose by schedule and due time for idempotency', async () => {
+    const dueAt = new Date().toISOString();
+    const dose = {
+      ...initMetadata(),
+      scheduleId: 'sched-123',
+      medicationId: 'med-123',
+      patientId: 'patient-123',
+      dueAt,
+      timezone: 'Asia/Bangkok',
+      status: 'scheduled',
+    };
+
+    await doseRepo.create(dose);
+
+    const found = await doseRepo.findByScheduleAndDueAt('sched-123', dueAt);
+    assert.ok(found);
+    assert.equal(found.id, dose.id);
+  });
+});
+
+describe('Measurement Repository', () => {
+  let repo;
+
+  beforeEach(() => {
+    repo = new InMemoryMeasurementRepository();
+  });
+
+  it('should validate and create weight measurement', async () => {
+    const measurement = {
+      ...initMetadata('user-123'),
+      patientId: 'patient-123',
+      measurementType: 'weight',
+      measuredAt: new Date().toISOString(),
+      timezone: 'Asia/Bangkok',
+      source: { type: 'manual' },
+      recordedByUserId: 'user-123',
+      value: { weight_kg: 70.5 },
+    };
+
+    const created = await repo.create(measurement);
+    assert.ok(created.id);
+    assert.equal(created.value.weight_kg, 70.5);
+  });
+
+  it('should reject invalid measurement values', async () => {
+    const invalidWeight = {
+      ...initMetadata('user-123'),
+      patientId: 'patient-123',
+      measurementType: 'weight',
+      measuredAt: new Date().toISOString(),
+      timezone: 'Asia/Bangkok',
+      source: { type: 'manual' },
+      recordedByUserId: 'user-123',
+      value: { weight_kg: -5 }, // Invalid negative weight
+    };
+
+    await assert.rejects(
+      async () => await repo.create(invalidWeight),
+      (err) => err.code === 'VALIDATION_FAILED'
+    );
+  });
+
+  it('should validate glucose measurement with context', async () => {
+    const glucose = {
+      ...initMetadata('user-123'),
+      patientId: 'patient-123',
+      measurementType: 'glucose',
+      measuredAt: new Date().toISOString(),
+      timezone: 'Asia/Bangkok',
+      source: { type: 'manual' },
+      recordedByUserId: 'user-123',
+      value: { glucose_mg_dl: 120, context: 'fasting' },
+    };
+
+    const created = await repo.create(glucose);
+    assert.equal(created.value.glucose_mg_dl, 120);
+    assert.equal(created.value.context, 'fasting');
+  });
+
+  it('should require glucose context', async () => {
+    const glucoseNoContext = {
+      ...initMetadata('user-123'),
+      patientId: 'patient-123',
+      measurementType: 'glucose',
+      measuredAt: new Date().toISOString(),
+      timezone: 'Asia/Bangkok',
+      source: { type: 'manual' },
+      recordedByUserId: 'user-123',
+      value: { glucose_mg_dl: 120 }, // Missing context
+    };
+
+    await assert.rejects(
+      async () => await repo.create(glucoseNoContext),
+      (err) => err.code === 'VALIDATION_FAILED' && err.message.includes('context')
+    );
+  });
+
+  it('should validate blood pressure measurement', async () => {
+    const bp = {
+      ...initMetadata('user-123'),
+      patientId: 'patient-123',
+      measurementType: 'blood_pressure',
+      measuredAt: new Date().toISOString(),
+      timezone: 'Asia/Bangkok',
+      source: { type: 'manual' },
+      recordedByUserId: 'user-123',
+      value: { systolic_mmhg: 120, diastolic_mmhg: 80, pulse_bpm: 72, context: 'resting' },
+    };
+
+    const created = await repo.create(bp);
+    assert.equal(created.value.systolic_mmhg, 120);
+    assert.equal(created.value.diastolic_mmhg, 80);
+  });
+
+  it('should filter measurements by type and date range', async () => {
+    const baseDate = new Date('2026-06-20T08:00:00Z');
+
+    const weight1 = {
+      ...initMetadata('user-123'),
+      patientId: 'patient-123',
+      measurementType: 'weight',
+      measuredAt: new Date(baseDate.getTime()).toISOString(),
+      timezone: 'Asia/Bangkok',
+      source: { type: 'manual' },
+      recordedByUserId: 'user-123',
+      value: { weight_kg: 70 },
+    };
+
+    const weight2 = {
+      ...initMetadata('user-123'),
+      patientId: 'patient-123',
+      measurementType: 'weight',
+      measuredAt: new Date(baseDate.getTime() + 86400000).toISOString(),
+      timezone: 'Asia/Bangkok',
+      source: { type: 'manual' },
+      recordedByUserId: 'user-123',
+      value: { weight_kg: 71 },
+    };
+
+    const glucose = {
+      ...initMetadata('user-123'),
+      patientId: 'patient-123',
+      measurementType: 'glucose',
+      measuredAt: new Date(baseDate.getTime() + 43200000).toISOString(),
+      timezone: 'Asia/Bangkok',
+      source: { type: 'manual' },
+      recordedByUserId: 'user-123',
+      value: { glucose_mg_dl: 110, context: 'fasting' },
+    };
+
+    await repo.create(weight1);
+    await repo.create(weight2);
+    await repo.create(glucose);
+
+    const allMeasurements = await repo.listPatientMeasurements('patient-123');
+    assert.equal(allMeasurements.measurements.length, 3);
+
+    const weightOnly = await repo.listPatientMeasurements('patient-123', { measurementType: 'weight' });
+    assert.equal(weightOnly.measurements.length, 2);
+
+    const dateRange = await repo.listPatientMeasurements('patient-123', {
+      from: weight1.measuredAt,
+      to: glucose.measuredAt,
+    });
+    assert.equal(dateRange.measurements.length, 2); // weight1 and glucose, not weight2
+  });
+
+  it('should enforce version conflicts on measurement updates', async () => {
+    const measurement = {
+      ...initMetadata('user-123'),
+      patientId: 'patient-123',
+      measurementType: 'weight',
+      measuredAt: new Date().toISOString(),
+      timezone: 'Asia/Bangkok',
+      source: { type: 'manual' },
+      recordedByUserId: 'user-123',
+      value: { weight_kg: 70 },
+    };
+
+    const created = await repo.create(measurement);
+
+    const updated = await repo.update({
+      ...updateMetadata(created),
+      value: { weight_kg: 71 },
+    });
+
+    assert.equal(updated.value.weight_kg, 71);
+
+    // Try to update with stale version
+    await assert.rejects(
+      async () => await repo.update({ ...created, value: { weight_kg: 72 } }),
+      (err) => err instanceof VersionConflictError
+    );
+  });
+});
+
 assert.ok(true, 'Domain repository tests complete');

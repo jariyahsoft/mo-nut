@@ -14,3 +14,5 @@ export * from './patient.js';
 export * from './caregiver.js';
 export * from './consent.js';
 export * from './appointment.js';
+export * from './medication.js';
+export * from './measurement.js';
