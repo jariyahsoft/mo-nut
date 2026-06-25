@@ -1,3 +1,16 @@
+# 2026-06-25T22:29:07Z
+
+- Task: 11 - Caregiver, Consent, and Appointment Repositories
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Extended domain package with permission-critical caregiver relationships, consent management, and appointment lifecycle tracking; implemented CaregiverInvitation/CareRelationship entities with token-based invitation flow and role-based access (primary/backup/viewer); implemented CaregiverRepository with duplicate prevention and single active primary caregiver constraint; implemented ConsentGrant entity with purpose/scope-based permissions; implemented ConsentRepository with integrated permission evaluation checking both caregiver relationships and active consents; implemented Appointment/AppointmentEvent entities with status transitions, preparation checklist, linked documents, and full history tracking; implemented AppointmentRepository with pagination, date filtering, and event sourcing; all repositories enforce optimistic concurrency, soft-delete, and version tracking.
+- Changed files: `packages/domain/src/appointment.ts`, `packages/domain/src/caregiver.ts`, `packages/domain/src/consent.ts`, `packages/domain/src/index.ts`, `packages/domain/test/repositories.test.mjs`
+- Verification: `npx --yes pnpm@11.9.0 lint`, `npx --yes pnpm@11.9.0 typecheck`, `npx --yes pnpm@11.9.0 build`, and `npx --yes pnpm@11.9.0 test` all passed after confirming 14 domain repository tests including caregiver invitation flow with token hashes, duplicate active relationship prevention, primary caregiver constraint enforcement, permission evaluation with relationship+consent integration, appointment status transitions with history tracking, and version conflict handling.
+- Self-review: Caregiver invitations use hashed tokens (plain tokens never stored), relationships enforce business rules (single primary, no duplicate active pairs), consent evaluation requires both active relationship and unexpired consent with matching scopes, appointments track full event history for audit trail, all status transitions are immutable events, pagination supports date range filtering for calendar views, and permission evaluation prevents unauthorized cross-patient access by checking relationship existence before consent.
+- Telegram: not sent yet
+- Remaining risks/blockers: Task 12 requires medication and health measurement repositories with schedule revision tracking and typed measurement validation.
+
 # 2026-06-25T21:52:35Z
 
 - Task: 10 - Domain Metadata, User, and Patient Repositories
