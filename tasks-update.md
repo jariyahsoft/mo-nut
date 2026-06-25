@@ -1,3 +1,16 @@
+# 2026-06-25T23:45:21Z
+
+- Task: 12 - Medication, Dose Event, and Health Measurement Repositories
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Extended domain package with medication management, dose tracking, and health measurements; implemented Medication entity with status lifecycle, inventory tracking, images, and active schedule references; implemented MedicationSchedule with flexible pattern types (daily_times, specific_days, every_n_hours, weekly, monthly, as_needed) and supersession tracking; implemented DoseOccurrence and DoseEvent entities with idempotent action recording where first final action creates an 'action' event and subsequent changes require correction reason and create 'correction' events; implemented HealthMeasurement with typed values supporting weight, height, pulse, glucose (with required context), and blood pressure measurements; implemented comprehensive validation for each measurement type with range checking; all repositories enforce schedule revision history preservation, idempotent dose actions, measurement validation, version conflicts, soft-delete, pagination, and date-range filtering.
+- Changed files: `packages/domain/src/medication.ts`, `packages/domain/src/measurement.ts`, `packages/domain/src/index.ts`, `packages/domain/test/repositories.test.mjs`
+- Verification: `npx --yes pnpm@11.9.0 lint`, `npx --yes pnpm@11.9.0 typecheck`, `npx --yes pnpm@11.9.0 build`, and `npx --yes pnpm@11.9.0 test` all passed after confirming 28 domain repository tests including medication CRUD with status filtering, schedule revision history preservation (old schedules marked as superseded when new ones created), idempotent dose action recording (duplicate actions return existing event), correction event requirements (must include reason after first action), dose lookup by schedule and due time for idempotency, typed measurement validation (weight/height/pulse ranges, glucose context requirement, blood pressure validation), measurement filtering by type and date range, and version conflict enforcement on updates.
+- Self-review: Medication schedules preserve full history when revised by marking old schedules inactive and linking to superseding schedule via supersededByScheduleId, dose actions enforce idempotency by checking current status and returning existing event if already recorded, correction events require explicit reason to prevent accidental overwrites, measurement validation is type-specific with appropriate ranges (weight 0-500kg, height 0-300cm, pulse 0-300bpm, glucose 0-1000mg/dL with required context, BP systolic 0-300/diastolic 0-200mmHg), all measurement queries support filtering by type and date range for trend analysis, dose repository tracks full event history per occurrence for audit trail, and schedule changes never orphan existing dose occurrences (scheduleId remains valid even after supersession).
+- Telegram: not sent yet
+- Remaining risks/blockers: Task 13 likely requires Firebase adapter implementation mapping these portable domain repositories to Firestore collections with proper indexes and security rules.
+
 # 2026-06-25T22:29:07Z
 
 - Task: 11 - Caregiver, Consent, and Appointment Repositories
