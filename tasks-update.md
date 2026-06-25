@@ -1,3 +1,16 @@
+# 2026-06-25T16:13:15Z
+
+- Task: 08 - App Check, Web Push, and In-app Notifications
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented Firebase App Check with environment-safe configuration (debug/reCAPTCHA v3/Enterprise), Web Push notification subscription lifecycle with FCM integration, in-app notification fallback store, privacy-safe delivery with three privacy levels (minimal/summary/full), quiet hours support, service worker for background notifications, graceful degradation when push is unavailable, and comprehensive documentation.
+- Changed files: `infra/firebase/app-check.json`, `infra/firebase/push-notifications.json`, `infra/firebase/NOTIFICATIONS.md`, `apps/web/src/lib/firebase/app-check.ts`, `apps/web/src/lib/firebase/push-notifications.ts`, `apps/web/src/lib/notifications/in-app-store.ts`, `apps/web/public/firebase-messaging-sw.js`, `apps/web/test/notifications.test.mjs`, `.env.example`
+- Verification: `npx --yes pnpm@11.9.0 lint`, `npx --yes pnpm@11.9.0 typecheck`, `npx --yes pnpm@11.9.0 test`, and `npx --yes pnpm@11.9.0 build` all passed after confirming App Check initialization, notification capabilities detection, subscription lifecycle, privacy level masking, quiet hours calculation, and in-app store functionality.
+- Self-review: App Check uses debug tokens for local development to prevent blocking legitimate traffic, production uses reCAPTCHA Enterprise for enhanced security, Web Push is opt-in with fallback to in-app notifications always available, notification payloads contain no PHI (only reference IDs), privacy is minimal by default with user-configurable levels, quiet hours are respected for non-critical notifications, service worker handles background push, subscription tokens refresh before expiry, and all initialization errors are logged but don't block app functionality.
+- Telegram: sent
+- Remaining risks/blockers: Task 09 requires secrets management, observability setup, and cost controls before production deployment.
+
 # 2026-06-25T16:02:09Z
 
 - Task: 07 - Firestore, Storage Rules, and Indexes

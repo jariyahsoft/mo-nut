@@ -1,0 +1,82 @@
+{
+  "fcm": {
+    "vapidKey": "REPLACE_WITH_FCM_WEB_PUSH_VAPID_KEY",
+    "comment": "Firebase Cloud Messaging VAPID public key for Web Push. Generate via Firebase Console > Project Settings > Cloud Messaging > Web Push certificates."
+  },
+  "serviceWorker": {
+    "path": "/firebase-messaging-sw.js",
+    "scope": "/",
+    "comment": "Service worker handles background push notifications and must be served from root for scope."
+  },
+  "notificationChannels": {
+    "dose_reminder": {
+      "priority": "high",
+      "badge": "medication",
+      "sound": "default",
+      "vibrate": [200, 100, 200]
+    },
+    "appointment_reminder": {
+      "priority": "high",
+      "badge": "appointment",
+      "sound": "default",
+      "vibrate": [200, 100, 200]
+    },
+    "caregiver_alert": {
+      "priority": "high",
+      "badge": "alert",
+      "sound": "alert",
+      "vibrate": [300, 100, 300, 100, 300]
+    },
+    "general": {
+      "priority": "default",
+      "badge": "info",
+      "sound": "default",
+      "vibrate": [200]
+    }
+  },
+  "privacyLevels": {
+    "minimal": {
+      "title": "Mo-nut",
+      "body": "คุณมีการแจ้งเตือนใหม่",
+      "comment": "No sensitive information on lock screen"
+    },
+    "summary": {
+      "title": "Mo-nut",
+      "body": "นัดหมาย / ยา / การแจ้งเตือน",
+      "comment": "Category only, no details"
+    },
+    "full": {
+      "comment": "Full notification text if user opts in"
+    }
+  },
+  "fallback": {
+    "inAppOnly": true,
+    "comment": "In-app notifications are always available as baseline. Web Push is opt-in enhancement."
+  },
+  "lifecycle": {
+    "subscriptionTTL": 2592000,
+    "comment": "Refresh subscriptions older than 30 days (2592000 seconds)"
+  },
+  "quietHours": {
+    "enabled": true,
+    "defaultStart": "22:00",
+    "defaultEnd": "07:00",
+    "timezone": "Asia/Bangkok",
+    "comment": "User-configurable quiet hours for non-critical notifications"
+  },
+  "deepLinks": {
+    "baseUrl": "https://app.mo-nut.example.com",
+    "patterns": {
+      "dose": "/medications/doses/{doseId}",
+      "appointment": "/appointments/{appointmentId}",
+      "measurement": "/health/measurements/{measurementId}",
+      "notification": "/notifications/{notificationId}"
+    }
+  },
+  "retryPolicy": {
+    "maxAttempts": 3,
+    "backoffMs": [1000, 5000, 15000],
+    "expireAfterHours": 72,
+    "comment": "Retry failed deliveries with exponential backoff, expire after 3 days"
+  }
+}
