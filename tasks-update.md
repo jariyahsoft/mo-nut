@@ -1,3 +1,15 @@
+# 2026-06-26T03:40:00Z
+
+- Task: 29 - Appointment Reminders and Actions
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented backend support for timezone-aware scheduled reminders, quiet hours routing, and caregiver escalation. Created NotificationService that implements scheduleReminders (creates dual offsets at 24 hours/2 hours initially; cleans old pending jobs on rescheduled/cancelled events keeping it idempotent), calculateScheduledTime (shifts target time to 07:00 UTC next morning if within 22:00 - 06:00 quiet hours, or to 15 mins before if shifted time surpasses appointment time), and runEscalationCheck (determines if appointment is unconfirmed 15 minutes before actual start, triggering caregiver warning). Implemented lock-screen privacy filters: summary and minimal modes redact diagnostic notes and details. Created NotificationController.
+- Changed files: `apps/api/src/app.module.ts`, `apps/api/src/notification/*`, `apps/api/test/notification.test.mjs`
+- Verification: Build, lint, and all 145 tests pass across the workspace.
+- Telegram: sent
+- Remaining risks/blockers: Task 30 requires medication CRUD with dynamic schedule rules and batched dose generation.
+
 # 2026-06-26T03:32:00Z
 
 - Task: 28 - Secure Upload, OCR Job, and Review
