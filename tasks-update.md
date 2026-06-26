@@ -389,3 +389,15 @@
 - Verification: Build clean and 87 API tests pass.
 - Telegram: sent
 - Remaining risks/blockers: Task 34 requires checklist and doctor question module.
+
+# 2026-06-26T04:45:00Z
+
+- Task: 34 - Checklists, Questions, and Answers
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented backend Checklist and Doctor Question API with draft activation, streak/progress computation, priority ordering, and required skip reasons.
+- Changed files: `apps/api/src/app.module.ts`, `apps/api/src/checklist/*`, `apps/api/test/checklist.test.mjs`
+- Verification: Build clean and 94 API tests pass.
+- Telegram: sent
+- Remaining risks/blockers: Task 35 requires Today dashboard aggregation.
