@@ -425,3 +425,15 @@
 - Verification: Build clean and 108 API tests pass.
 - Telegram: sent
 - Remaining risks/blockers: Task 37 requires Speech-to-Text and transcript review.
+
+# 2026-06-26T05:22:00Z
+
+- Task: 37 - Speech-to-Text and Transcript Review
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented backend STT (Thai) with transcript review. SttService manages state transitions queued->processing->review_required, edit history preservation (original text saved on first edit), and gates clinical draft creation until transcript is confirmed (reviewedAt). Retry is idempotent and skips completed/applied jobs.
+- Changed files: `apps/api/src/app.module.ts`, `apps/api/src/stt/*`, `apps/api/test/stt.test.mjs`
+- Verification: Build clean and 116 API tests pass.
+- Telegram: sent
+- Remaining risks/blockers: Task 38 requires PDF reports and secure share links.
