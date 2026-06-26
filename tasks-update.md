@@ -1,3 +1,15 @@
+# 2026-06-26T01:52:00Z
+
+- Task: 19 - Design System and Responsive PWA Shell
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4-mini (Tier B)
+- Summary: Implemented design system with brand tokens, responsive shell layout, and accessible component primitives for the Mo-nut PWA. Created tokens for typography (Thai-optimized with Sarabun/Noto Sans Thai), colors (teal primary for trust, amber accent for reminders, red for SOS only), spacing scale (4-80px), shape/shadows, and animation timing. Built responsive ShellLayout with mobile bottom navigation, tablet/desktop sidebar, safe-area-aware insets, and sticky top bar. Created NavItem with active state, badge support, and keyboard accessibility. Created component primitives: Button (4 variants, 3 sizes), Card (interactive with keyboard), StatusBadge (never color-only — text+icon always included), FormField with error state, Input with aria-invalid, Skeleton shimmer, EmptyState. Updated globals.css with reduced-motion media query, focus-visible keyboard-only outline, skeleton animation, responsive media queries for sidebar/bottom-nav toggle, and 200% zoom support. All components are bilingual (Thai/English) for elderly-friendly UX.
+- Changed files: `apps/web/src/lib/design/tokens.ts`, `apps/web/src/lib/design/components.tsx`, `apps/web/src/lib/design/shell.tsx`, `apps/web/src/app/globals.css`, `apps/web/src/app/layout.tsx`, `apps/web/src/app/page.tsx`, `apps/web/src/app/design-demo.tsx`
+- Verification: Build, typecheck, lint, and all 120+ tests pass across the workspace.
+- Telegram: sent
+- Remaining risks/blockers: Task 20 requires Today dashboard prototype with appointment aggregation and medication summary cards.
+
 # 2026-06-26T01:38:30Z
 
 - Task: 18 - Browser Capability Adapters and Resumable Uploads
