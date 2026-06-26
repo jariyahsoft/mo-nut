@@ -4,7 +4,7 @@ import { PWARegistrator } from "./pwa-registrator";
 
 export const metadata = {
   title: "Mo-nut",
-  description: "Mo-nut PWA foundation",
+  description: "Mo-nut PWA — แอปพลิเคชันดูแลสุขภาพ",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -28,6 +28,14 @@ export default function RootLayout({
   return (
     <html lang="th">
       <head>
+        {/* Thai font preload */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+
         {/* iOS PWA meta tags */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
