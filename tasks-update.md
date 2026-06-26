@@ -353,3 +353,15 @@
 - Self-review: Blocker handling matches the run prompt; no code changes were needed or made.
 - Telegram: sent
 - Remaining risks/blockers: task 01 remains blocked until task 00 is completed.
+
+# 2026-06-26T04:15:00Z
+
+- Task: 31 - Dose Actions and Offline Sync
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented backend Dose Action API with idempotency and correction history. Created DoseService implementing recordAction (handles Taken/Snooze/Skip/Report Issue actions, idempotent on same action repeat, requires correctionReason for changes after final action, creates correction events preserving original). DoseController exposes POST /doses/actions.
+- Changed files: `apps/api/src/app.module.ts`, `apps/api/src/dose/*`, `apps/api/test/dose.test.mjs`
+- Verification: Build clean and 73 API tests pass.
+- Telegram: sent
+- Remaining risks/blockers: Task 32 requires medication notifications with grace periods and caregiver escalation.
