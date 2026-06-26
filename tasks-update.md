@@ -1,3 +1,16 @@
+# 2026-06-26T01:25:30Z
+
+- Task: 17 - PWA Manifest, Service Worker, and Update Flow
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented complete PWA foundation with manifest metadata, service worker caching, and install/update flow. Created Web App Manifest with name, short_name, display standalone, orientation portrait, theme color #0f172a, background #ffffff, lang th, and SVG icons at 192px/512px/badge-96px. Implemented Service Worker (sw.js) with three-tier caching strategy: Cache First for App Shell (HTML, CSS, JS, fonts, _next/static, icons), Network First for data APIs (patients, medications, appointments, measurements), and Network Only for PHI-rich endpoints (auth, upload, share-links, SOS, audit, sync). Pre-caches App Shell URLs on install event, cleans old cache versions on activate, claims uncontrolled clients immediately. Created offline fallback page with retry button and bilingual message. Created PWAInstallManager for cross-browser install support (deferred beforeinstallprompt, iOS Safari guidance detection), standalone mode monitoring, and non-blocking prompt presentation. Created registerServiceWorker function with update detection dispatching custom pwa-update-available event. Created applyUpdate function communicating with waiting SW via postMessage SKIP_WAITING before reload to activate new version. Client-side PWARegistrator component registers SW on mount and shows update-available banner with refresh button.
+- Changed files: `apps/web/public/manifest.json`, `apps/web/public/sw.js`, `apps/web/public/offline.html`, `apps/web/public/icons/*.svg`, `apps/web/src/lib/pwa/install-prompt.ts`, `apps/web/src/app/pwa-registrator.tsx`, `apps/web/src/app/layout.tsx`, `packages/domain/test/pwa.test.mjs`
+- Verification: `npx --yes pnpm@11.9.0 lint`, `npx --yes pnpm@11.9.0 typecheck`, `npx --yes pnpm@11.9.0 build`, and `npx --yes pnpm@11.9.0 test` all passed after confirming 61 domain repository tests across all modules including PWA tests: pending mutation preservation across simulated SW update (shared MemoryStorageEngine survives re-instantiation), manifest metadata structure and icon paths, PHI endpoint protection via network-only cache policy pattern matching, network-first data API pattern matching, and full update flow data integrity.
+- Self-review: Service Worker caching strategy applies least-privilege principle to HTTP caching — App Shell assets are always available offline, data APIs prefer freshness with offline fallback, and PHI-rich endpoints are never cached. Update flow preserves pending IndexedDB mutations (offline store is independent of SW lifecycle). Install prompt is non-blocking and respects user choice. iOS guidance fills the gap where beforeinstallprompt is unavailable. Tests confirm cache policy isolation through URL pattern matching and store survival across simulated SW update cycle.
+- Telegram: sent
+- Remaining risks/blockers: Task 18 requires browser capabilities detection and resumable upload handling for large file uploads.
+
 # 2026-06-26T01:13:40Z
 
 - Task: 16 - IndexedDB Offline Store and Sync Queue
