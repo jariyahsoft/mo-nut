@@ -413,3 +413,15 @@
 - Verification: Build clean and 102 API tests pass.
 - Telegram: sent
 - Remaining risks/blockers: Tasks 31-35 complete.
+
+# 2026-06-26T05:12:00Z
+
+- Task: 36 - Doctor Visit Mode and Audio Capture
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented backend Doctor Visit Mode with audio recording consent. Created VisitModule with VisitService aggregating context (appointment, medications, priority questions, health summary, checklist progress). Recording requires explicit consent confirmation (400 if missing). Audio file fallback supported.
+- Changed files: `apps/api/src/app.module.ts`, `apps/api/src/visit/*`, `apps/api/test/visit.test.mjs`
+- Verification: Build clean and 108 API tests pass.
+- Telegram: sent
+- Remaining risks/blockers: Task 37 requires Speech-to-Text and transcript review.
