@@ -1,3 +1,16 @@
+# 2026-06-26T00:42:15Z
+
+- Task: 14 - Audit, Outbox, and Background Job Foundation
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Extended domain package with audit trail, transactional outbox pattern, and background job scheduling; implemented AuditEvent entity for append-only immutable audit trail with comprehensive action types (login, consent, caregiver, share links, appointments, medications, reports, SOS, admin access) and resource/actor tracking with correlation IDs; implemented OutboxMessage entity for transactional outbox pattern enabling reliable side effects (notifications, OCR/STT jobs, reports, reminders, dose generation) with idempotency key enforcement and dead-letter queue support; implemented BackgroundJob entity for worker processing with scheduling, retry logic, idempotency, and cancellation; renamed BackgroundJobType and BackgroundJobStatus to avoid name clash with media.ts ProcessingJob types; audit repository enforces append-only semantics by rejecting duplicate IDs (no update/delete through normal API); outbox repository enforces unique idempotency keys preventing duplicate message processing and supports moveToDeadLetter for retry exhaustion; background job repository enforces unique idempotency keys for worker-level deduplication and lists only jobs with scheduledFor <= now; all repositories support version conflict detection for safe concurrent updates.
+- Changed files: `packages/domain/src/system.ts`, `packages/domain/src/index.ts`, `packages/domain/test/repositories.test.mjs`
+- Verification: `npx --yes pnpm@11.9.0 lint`, `npx --yes pnpm@11.9.0 typecheck`, `npx --yes pnpm@11.9.0 build`, and `npx --yes pnpm@11.9.0 test` all passed after confirming 41 domain repository tests including append-only audit enforcement (duplicate ID rejected), outbox idempotency key uniqueness (duplicate key rejected), outbox retry and dead-letter flow (status transitions from pending->processing->pending with retry increment, then dead_letter with reason), background job scheduling (only jobs with scheduledFor <= now listed), and background job cancellation (status set to cancelled, excluded from scheduled list).
+- Self-review: Audit events are truly append-only with repository rejecting any attempt to create duplicate IDs ensuring immutability, outbox idempotency keys enable exactly-once delivery semantics by preventing duplicate message creation and allowing workers to safely retry, outbox dead-letter queue preserves failed messages with error reasons for manual inspection and replay, background jobs use scheduledFor timestamp for delayed execution enabling future scheduling, idempotency keys at both outbox and background job levels prevent duplicate side effects across restarts, correlation IDs enable distributed tracing across audit events and operations, and version conflicts prevent lost updates when multiple workers process same entity.
+- Telegram: sent
+- Remaining risks/blockers: Tasks 13-14 complete the P0 domain repository foundation; future tasks require Firebase adapter implementations mapping these portable repositories to Firestore collections with proper security rules and indexes.
+
 # 2026-06-26T00:35:15Z
 
 - Task: 13 - Media, Checklist, Report, and SOS Repositories
