@@ -1,3 +1,15 @@
+# 2026-06-26T03:52:00Z
+
+- Task: 30 - Medication CRUD and Schedule Engine
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented backend Medication API and Recurrence Schedule Engine. Created MedicationService governing CRUD and version validations. Implements duplicate prevention, optimistic locks, and schedule supersession (inactive marking + linking to new rule) to preserve occurrence history integrity. Created ScheduleEngineService implementing batch dose generation (generates up to X days ahead) with deterministic occurrence keys (occ:{medicationId}:{dueTimeUtc}) preventing duplicate dose slots. Matches daily, specific_days, weekly, and interval rules. Completed dose history remains untouched when the medication rules are edited. Created MedicationController.
+- Changed files: `apps/api/src/app.module.ts`, `apps/api/src/medication/*`, `apps/api/test/medication.test.mjs`
+- Verification: Build, lint, and all 151 tests pass across the workspace.
+- Telegram: sent
+- Remaining risks/blockers: Task 31 requires dose actions recording (taken/skipped/etc) with offline sync support and local/server reconciliation.
+
 # 2026-06-26T03:40:00Z
 
 - Task: 29 - Appointment Reminders and Actions
