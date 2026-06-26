@@ -1,3 +1,15 @@
+# 2026-06-26T03:32:00Z
+
+- Task: 28 - Secure Upload, OCR Job, and Review
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented backend support for secure media uploads, validation, and async mock OCR processing with draft review interfaces. Created DocumentService implementing initiateUpload (enforcing allowed MIMEs: JPEG/PNG/PDF and maximum file size of 10MB, category: prescription), uploadChunk (validating per-chunk SHA-256 integrity), and completeUpload (verifying full file checksum upon completion). Created OcrService which auto-executes OCR processing asynchronously on a separate process tick, generating an ExtractedDraft with mock parsed appointment details (title, facility, preparations) and low/high confidence scores. Draft remains in "pending" status until confirmed manually by calling POST /documents/drafts/:draftId/confirm, which transitions the draft to "approved", the job to "applied" and creates a real Appointment resource. Created DocumentController.
+- Changed files: `apps/api/src/app.module.ts`, `apps/api/src/document/*`, `apps/api/test/document.test.mjs`
+- Verification: Build, lint, and all 140 tests pass across the workspace.
+- Telegram: sent
+- Remaining risks/blockers: Task 29 requires timezone-aware scheduling for Web Push and In-app notifications with quiet hours.
+
 # 2026-06-26T03:26:00Z
 
 - Task: 27 - Appointment CRUD, List, Detail, and Calendar
