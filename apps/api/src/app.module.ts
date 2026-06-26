@@ -11,6 +11,7 @@ import { NotificationModule } from "./notification/notification.module.js";
 import { MedicationModule } from "./medication/medication.module.js";
 import { DoseModule } from "./dose/dose.module.js";
 import { MedicationNotificationModule } from "./medication-notification/medication-notification.module.js";
+import { MeasurementModule } from "./measurement/measurement.module.js";
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { MedicationNotificationModule } from "./medication-notification/medicati
     MedicationModule,
     DoseModule,
     MedicationNotificationModule,
+    MeasurementModule,
   ],
   controllers: [AppController],
   providers: [AppService],
