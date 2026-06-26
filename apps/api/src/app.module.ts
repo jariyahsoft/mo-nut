@@ -15,6 +15,7 @@ import { MeasurementModule } from "./measurement/measurement.module.js";
 import { ChecklistModule } from "./checklist/checklist.module.js";
 import { TodayModule } from "./today/today.module.js";
 import { VisitModule } from "./visit/visit.module.js";
+import { SttModule } from "./stt/stt.module.js";
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { VisitModule } from "./visit/visit.module.js";
     ChecklistModule,
     TodayModule,
     VisitModule,
+    SttModule,
   ],
   controllers: [AppController],
   providers: [AppService],
