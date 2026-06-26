@@ -10,6 +10,7 @@ import { DocumentModule } from "./document/document.module.js";
 import { NotificationModule } from "./notification/notification.module.js";
 import { MedicationModule } from "./medication/medication.module.js";
 import { DoseModule } from "./dose/dose.module.js";
+import { MedicationNotificationModule } from "./medication-notification/medication-notification.module.js";
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { DoseModule } from "./dose/dose.module.js";
     NotificationModule,
     MedicationModule,
     DoseModule,
+    MedicationNotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
