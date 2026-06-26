@@ -16,6 +16,7 @@ import { ChecklistModule } from "./checklist/checklist.module.js";
 import { TodayModule } from "./today/today.module.js";
 import { VisitModule } from "./visit/visit.module.js";
 import { SttModule } from "./stt/stt.module.js";
+import { ReportModule } from "./report/report.module.js";
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { SttModule } from "./stt/stt.module.js";
     TodayModule,
     VisitModule,
     SttModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],
