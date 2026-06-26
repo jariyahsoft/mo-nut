@@ -6,9 +6,10 @@ import { ConsentModule } from "./consent/consent.module.js";
 import { PatientModule } from "./patient/patient.module.js";
 import { CaregiverModule } from "./caregiver/caregiver.module.js";
 import { AppointmentModule } from "./appointment/appointment.module.js";
+import { DocumentModule } from "./document/document.module.js";
 
 @Module({
-  imports: [AuthModule, ConsentModule, PatientModule, CaregiverModule, AppointmentModule],
+  imports: [AuthModule, ConsentModule, PatientModule, CaregiverModule, AppointmentModule, DocumentModule],
   controllers: [AppController],
   providers: [AppService],
 })
