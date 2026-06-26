@@ -20,3 +20,4 @@ export * from './media.js';
 export * from './activity.js';
 export * from './system.js';
 export * from './offline.js';
+export * from './upload.js';
