@@ -32,6 +32,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@mo-nut/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@nestjs/common':
         specifier: 11.1.27
         version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
