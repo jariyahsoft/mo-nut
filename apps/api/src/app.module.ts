@@ -8,9 +8,19 @@ import { CaregiverModule } from "./caregiver/caregiver.module.js";
 import { AppointmentModule } from "./appointment/appointment.module.js";
 import { DocumentModule } from "./document/document.module.js";
 import { NotificationModule } from "./notification/notification.module.js";
+import { MedicationModule } from "./medication/medication.module.js";
 
 @Module({
-  imports: [AuthModule, ConsentModule, PatientModule, CaregiverModule, AppointmentModule, DocumentModule, NotificationModule],
+  imports: [
+    AuthModule,
+    ConsentModule,
+    PatientModule,
+    CaregiverModule,
+    AppointmentModule,
+    DocumentModule,
+    NotificationModule,
+    MedicationModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
