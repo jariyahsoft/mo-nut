@@ -1683,4 +1683,450 @@ describe('Measurement Repository', () => {
   });
 });
 
+/**
+ * In-memory ProcessingJob Repository for testing
+ */
+class InMemoryProcessingJobRepository {
+  constructor() {
+    this.jobs = new Map();
+  }
+
+  async findById(id) {
+    return this.jobs.get(id) || null;
+  }
+
+  async findByAssetId(assetId) {
+    return Array.from(this.jobs.values()).filter((j) => j.assetId === assetId);
+  }
+
+  async listPendingJobs(jobType, limit = 50) {
+    let jobs = Array.from(this.jobs.values()).filter(
+      (j) => j.status === 'queued' || j.status === 'processing'
+    );
+
+    if (jobType) {
+      jobs = jobs.filter((j) => j.jobType === jobType);
+    }
+
+    jobs.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return jobs.slice(0, limit);
+  }
+
+  async create(job) {
+    this.jobs.set(job.id, job);
+    return job;
+  }
+
+  async update(job) {
+    const existing = this.jobs.get(job.id);
+    if (!existing) {
+      throw new NotFoundError('ProcessingJob', job.id);
+    }
+
+    if (existing.version !== job.version - 1) {
+      throw new VersionConflictError('ProcessingJob', job.version - 1, existing.version);
+    }
+
+    this.jobs.set(job.id, job);
+    return job;
+  }
+
+  async transitionStatus(jobId, newStatus, errorMessage) {
+    const job = this.jobs.get(jobId);
+    if (!job) {
+      throw new NotFoundError('ProcessingJob', jobId);
+    }
+
+    // Validate state transitions
+    const validTransitions = {
+      uploaded: ['queued', 'failed'],
+      queued: ['processing', 'failed'],
+      processing: ['review_required', 'confirmed', 'failed', 'retrying'],
+      review_required: ['confirmed', 'manual_entry'],
+      confirmed: ['applied'],
+      retrying: ['processing', 'failed'],
+    };
+
+    const allowed = validTransitions[job.status] || [];
+    if (!allowed.includes(newStatus)) {
+      return {
+        job,
+        error: `Invalid transition from ${job.status} to ${newStatus}`,
+      };
+    }
+
+    job.status = newStatus;
+    job.version = job.version + 1;
+    job.updatedAt = new Date().toISOString();
+    if (errorMessage) {
+      job.errorMessage = errorMessage;
+    }
+    if (newStatus === 'applied' || newStatus === 'failed') {
+      job.completedAt = new Date().toISOString();
+    }
+
+    this.jobs.set(jobId, job);
+    return { job };
+  }
+}
+
+/**
+ * In-memory ShareLink Repository for testing
+ */
+class InMemoryShareLinkRepository {
+  constructor() {
+    this.links = new Map();
+    this.accesses = [];
+  }
+
+  async findById(id) {
+    return this.links.get(id) || null;
+  }
+
+  async findByTokenHash(tokenHash) {
+    for (const link of this.links.values()) {
+      if (link.tokenHash === tokenHash) {
+        return link;
+      }
+    }
+    return null;
+  }
+
+  async listOwnerLinks(ownerId) {
+    return Array.from(this.links.values()).filter((l) => l.ownerId === ownerId);
+  }
+
+  async create(link) {
+    this.links.set(link.id, link);
+    return link;
+  }
+
+  async update(link) {
+    const existing = this.links.get(link.id);
+    if (!existing) {
+      throw new NotFoundError('ShareLink', link.id);
+    }
+
+    if (existing.version !== link.version - 1) {
+      throw new VersionConflictError('ShareLink', link.version - 1, existing.version);
+    }
+
+    this.links.set(link.id, link);
+    return link;
+  }
+
+  async recordAccess(access) {
+    this.accesses.push(access);
+  }
+
+  async validateAndIncrementUse(tokenHash) {
+    const link = await this.findByTokenHash(tokenHash);
+    if (!link) {
+      return null;
+    }
+
+    // Check if expired
+    if (new Date(link.expiresAt) < new Date()) {
+      return null;
+    }
+
+    // Check if revoked
+    if (link.status === 'revoked' || link.status === 'expired') {
+      return null;
+    }
+
+    // Check max uses
+    if (link.maxUses && link.useCount >= link.maxUses) {
+      return null;
+    }
+
+    // Increment use count
+    link.useCount += 1;
+    link.version += 1;
+    link.updatedAt = new Date().toISOString();
+    this.links.set(link.id, link);
+
+    return link;
+  }
+}
+
+/**
+ * In-memory EmergencyEvent Repository for testing
+ */
+class InMemoryEmergencyEventRepository {
+  constructor() {
+    this.events = new Map();
+  }
+
+  async findById(id) {
+    return this.events.get(id) || null;
+  }
+
+  async listPatientEvents(patientId) {
+    return Array.from(this.events.values())
+      .filter((e) => e.patientId === patientId)
+      .sort((a, b) => b.initiatedAt.localeCompare(a.initiatedAt));
+  }
+
+  async create(event) {
+    this.events.set(event.id, event);
+    return event;
+  }
+
+  async update(event) {
+    const existing = this.events.get(event.id);
+    if (!existing) {
+      throw new NotFoundError('EmergencyEvent', event.id);
+    }
+
+    if (existing.version !== event.version - 1) {
+      throw new VersionConflictError('EmergencyEvent', event.version - 1, existing.version);
+    }
+
+    this.events.set(event.id, event);
+    return event;
+  }
+}
+
+describe('ProcessingJob Repository', () => {
+  let repo;
+
+  beforeEach(() => {
+    repo = new InMemoryProcessingJobRepository();
+  });
+
+  it('should validate state transitions for AI jobs', async () => {
+    const job = {
+      ...initMetadata('system'),
+      assetId: 'asset-123',
+      patientId: 'patient-123',
+      jobType: 'ocr',
+      provider: 'gcp_document_ai',
+      status: 'queued',
+      retryCount: 0,
+    };
+
+    const created = await repo.create(job);
+
+    // Valid transition: queued -> processing
+    const result1 = await repo.transitionStatus(created.id, 'processing');
+    assert.equal(result1.job.status, 'processing');
+    assert.equal(result1.error, undefined);
+
+    // Valid transition: processing -> review_required
+    const result2 = await repo.transitionStatus(created.id, 'review_required');
+    assert.equal(result2.job.status, 'review_required');
+
+    // Invalid transition: review_required -> failed (not allowed)
+    const result3 = await repo.transitionStatus(created.id, 'failed');
+    assert.ok(result3.error);
+    assert.ok(result3.error.includes('Invalid transition'));
+    assert.equal(result3.job.status, 'review_required'); // Status unchanged
+  });
+
+  it('should track retry count and completion', async () => {
+    const job = {
+      ...initMetadata('system'),
+      assetId: 'asset-456',
+      patientId: 'patient-456',
+      jobType: 'stt',
+      provider: 'openai_whisper',
+      status: 'processing',
+      retryCount: 0,
+    };
+
+    const created = await repo.create(job);
+
+    // Transition to retrying
+    await repo.transitionStatus(created.id, 'retrying');
+
+    // Update retry count manually
+    const updated = await repo.update({
+      ...updateMetadata(await repo.findById(created.id)),
+      retryCount: 1,
+    });
+
+    assert.equal(updated.retryCount, 1);
+
+    // Complete with failure
+    const result = await repo.transitionStatus(created.id, 'failed', 'Provider timeout');
+    assert.equal(result.job.status, 'failed');
+    assert.equal(result.job.errorMessage, 'Provider timeout');
+    assert.ok(result.job.completedAt);
+  });
+});
+
+describe('ShareLink Repository', () => {
+  let repo;
+
+  beforeEach(() => {
+    repo = new InMemoryShareLinkRepository();
+  });
+
+  it('should reject expired share links', async () => {
+    const expiredLink = {
+      ...initMetadata('user-123'),
+      ownerId: 'patient-123',
+      tokenHash: 'hash_expired',
+      scopes: ['appointments', 'medications'],
+      expiresAt: new Date(Date.now() - 3600000).toISOString(), // Expired 1 hour ago
+      useCount: 0,
+      status: 'active',
+    };
+
+    await repo.create(expiredLink);
+
+    const result = await repo.validateAndIncrementUse('hash_expired');
+    assert.equal(result, null);
+  });
+
+  it('should reject revoked share links', async () => {
+    const revokedLink = {
+      ...initMetadata('user-123'),
+      ownerId: 'patient-123',
+      tokenHash: 'hash_revoked',
+      scopes: ['measurements'],
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+      useCount: 0,
+      status: 'revoked',
+      revokedAt: new Date().toISOString(),
+      revokedBy: 'user-123',
+    };
+
+    await repo.create(revokedLink);
+
+    const result = await repo.validateAndIncrementUse('hash_revoked');
+    assert.equal(result, null);
+  });
+
+  it('should enforce max use limit', async () => {
+    const limitedLink = {
+      ...initMetadata('user-123'),
+      ownerId: 'patient-123',
+      tokenHash: 'hash_limited',
+      scopes: ['report'],
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+      maxUses: 2,
+      useCount: 0,
+      status: 'active',
+    };
+
+    await repo.create(limitedLink);
+
+    // First use
+    const use1 = await repo.validateAndIncrementUse('hash_limited');
+    assert.ok(use1);
+    assert.equal(use1.useCount, 1);
+
+    // Second use
+    const use2 = await repo.validateAndIncrementUse('hash_limited');
+    assert.ok(use2);
+    assert.equal(use2.useCount, 2);
+
+    // Third use should fail (max uses reached)
+    const use3 = await repo.validateAndIncrementUse('hash_limited');
+    assert.equal(use3, null);
+  });
+
+  it('should allow unlimited uses when maxUses is not set', async () => {
+    const unlimitedLink = {
+      ...initMetadata('user-123'),
+      ownerId: 'patient-123',
+      tokenHash: 'hash_unlimited',
+      scopes: ['appointments'],
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+      useCount: 0,
+      status: 'active',
+    };
+
+    await repo.create(unlimitedLink);
+
+    // Use multiple times
+    for (let i = 1; i <= 5; i++) {
+      const result = await repo.validateAndIncrementUse('hash_unlimited');
+      assert.ok(result);
+      assert.equal(result.useCount, i);
+    }
+  });
+});
+
+describe('EmergencyEvent Repository', () => {
+  let repo;
+
+  beforeEach(() => {
+    repo = new InMemoryEmergencyEventRepository();
+  });
+
+  it('should track SOS partial failure in history', async () => {
+    const sosEvent = {
+      ...initMetadata('user-123'),
+      patientId: 'patient-123',
+      initiatedBy: 'user-123',
+      initiatedAt: new Date().toISOString(),
+      status: 'initiated',
+      location: {
+        latitude: 13.7563,
+        longitude: 100.5018,
+        accuracy: 10,
+        capturedAt: new Date().toISOString(),
+      },
+      notifiedContacts: ['contact-1', 'contact-2'],
+      failedContacts: ['contact-3'], // One contact failed to notify
+    };
+
+    const created = await repo.create(sosEvent);
+    assert.ok(created.id);
+    assert.equal(created.notifiedContacts.length, 2);
+    assert.equal(created.failedContacts.length, 1);
+
+    // Update to responded status
+    const updated = await repo.update({
+      ...updateMetadata(created, 'system'),
+      status: 'responded',
+      respondedBy: 'contact-1',
+      respondedAt: new Date().toISOString(),
+    });
+
+    assert.equal(updated.status, 'responded');
+    assert.equal(updated.respondedBy, 'contact-1');
+
+    // Verify partial failure is preserved in history
+    const found = await repo.findById(created.id);
+    assert.equal(found.failedContacts.length, 1);
+    assert.equal(found.failedContacts[0], 'contact-3');
+  });
+
+  it('should maintain append-oriented SOS history', async () => {
+    const event1 = {
+      ...initMetadata('user-123'),
+      patientId: 'patient-123',
+      initiatedBy: 'user-123',
+      initiatedAt: new Date(Date.now() - 3600000).toISOString(),
+      status: 'resolved',
+      notifiedContacts: ['contact-1'],
+      failedContacts: [],
+      resolvedAt: new Date(Date.now() - 1800000).toISOString(),
+    };
+
+    const event2 = {
+      ...initMetadata('user-123'),
+      patientId: 'patient-123',
+      initiatedBy: 'user-123',
+      initiatedAt: new Date().toISOString(),
+      status: 'initiated',
+      notifiedContacts: ['contact-1', 'contact-2'],
+      failedContacts: [],
+    };
+
+    await repo.create(event1);
+    await repo.create(event2);
+
+    const history = await repo.listPatientEvents('patient-123');
+    assert.equal(history.length, 2);
+    // Newest first
+    assert.equal(history[0].status, 'initiated');
+    assert.equal(history[1].status, 'resolved');
+  });
+});
+
 assert.ok(true, 'Domain repository tests complete');

@@ -16,3 +16,5 @@ export * from './consent.js';
 export * from './appointment.js';
 export * from './medication.js';
 export * from './measurement.js';
+export * from './media.js';
+export * from './activity.js';
