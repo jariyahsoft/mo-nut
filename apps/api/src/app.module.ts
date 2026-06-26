@@ -13,6 +13,7 @@ import { DoseModule } from "./dose/dose.module.js";
 import { MedicationNotificationModule } from "./medication-notification/medication-notification.module.js";
 import { MeasurementModule } from "./measurement/measurement.module.js";
 import { ChecklistModule } from "./checklist/checklist.module.js";
+import { TodayModule } from "./today/today.module.js";
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ChecklistModule } from "./checklist/checklist.module.js";
     MedicationNotificationModule,
     MeasurementModule,
     ChecklistModule,
+    TodayModule,
   ],
   controllers: [AppController],
   providers: [AppService],
