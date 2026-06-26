@@ -2125,6 +2125,390 @@ describe('EmergencyEvent Repository', () => {
     assert.equal(history.length, 2);
     // Newest first
     assert.equal(history[0].status, 'initiated');
+/**
+ * In-memory AuditEvent Repository for testing (Append-Only, Immutable)
+ */
+class InMemoryAuditEventRepository {
+  constructor() {
+    this.events = new Map();
+  }
+
+  async findById(id) {
+    return this.events.get(id) || null;
+  }
+
+  async listByResource(resourceType, resourceId, options = {}) {
+    let list = Array.from(this.events.values()).filter(
+      (e) => e.resourceType === resourceType && e.resourceId === resourceId
+    );
+
+    if (options.from) {
+      list = list.filter((e) => e.occurredAt >= options.from);
+    }
+
+    if (options.to) {
+      list = list.filter((e) => e.occurredAt <= options.to);
+    }
+
+    list.sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
+
+    const limit = options.limit || 50;
+    list = list.slice(0, limit);
+
+    return { events: list, nextCursor: undefined };
+  }
+
+  async listByActor(actorId, options = {}) {
+    let list = Array.from(this.events.values()).filter((e) => e.actorId === actorId);
+
+    if (options.action) {
+      list = list.filter((e) => e.action === options.action);
+    }
+
+    if (options.from) {
+      list = list.filter((e) => e.occurredAt >= options.from);
+    }
+
+    if (options.to) {
+      list = list.filter((e) => e.occurredAt <= options.to);
+    }
+
+    list.sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
+
+    const limit = options.limit || 50;
+    list = list.slice(0, limit);
+
+    return { events: list, nextCursor: undefined };
+  }
+
+  async create(event) {
+    // Enforce immutable logic: Cannot overwrite existing ID
+    if (this.events.has(event.id)) {
+      throw new DuplicateError('AuditEvent', 'id', event.id);
+    }
+    this.events.set(event.id, event);
+    return event;
+  }
+}
+
+/**
+ * In-memory Outbox Repository with classification/worker worker states
+ */
+class InMemoryOutboxRepository {
+  constructor() {
+    this.messages = new Map();
+  }
+
+  async findById(id) {
+    return this.messages.get(id) || null;
+  }
+
+  async findByIdempotencyKey(idempotencyKey) {
+    for (const msg of this.messages.values()) {
+      if (msg.idempotencyKey === idempotencyKey) {
+        return msg;
+      }
+    }
+    return null;
+  }
+
+  async listPending(messageType, limit = 50) {
+    let pending = Array.from(this.messages.values()).filter(
+      (m) => m.status === 'pending' || m.status === 'processing'
+    );
+
+    if (messageType) {
+      pending = pending.filter((m) => m.messageType === messageType);
+    }
+
+    pending.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return pending.slice(0, limit);
+  }
+
+  async create(message) {
+    // Unique idempotency key constraint
+    const existing = await this.findByIdempotencyKey(message.idempotencyKey);
+    if (existing) {
+      throw new DuplicateError('OutboxMessage', 'idempotencyKey', message.idempotencyKey);
+    }
+    this.messages.set(message.id, message);
+    return message;
+  }
+
+  async update(message) {
+    const existing = this.messages.get(message.id);
+    if (!existing) {
+      throw new NotFoundError('OutboxMessage', message.id);
+    }
+
+    if (existing.version !== message.version - 1) {
+      throw new VersionConflictError('OutboxMessage', message.version - 1, existing.version);
+    }
+
+    this.messages.set(message.id, message);
+    return message;
+  }
+
+  async moveToDeadLetter(id, reason) {
+    const message = this.messages.get(id);
+    if (!message) {
+      throw new NotFoundError('OutboxMessage', id);
+    }
+
+    message.status = 'dead_letter';
+    message.errorMessage = reason;
+    message.deadLetterAt = new Date().toISOString();
+    message.version += 1;
+    message.updatedAt = new Date().toISOString();
+    this.messages.set(id, message);
+  }
+}
+
+/**
+ * In-memory BackgroundJob Repository for testing
+ */
+class InMemoryBackgroundJobRepository {
+  constructor() {
+    this.jobs = new Map();
+  }
+
+  async findById(id) {
+    return this.jobs.get(id) || null;
+  }
+
+  async findByIdempotencyKey(idempotencyKey) {
+    for (const job of this.jobs.values()) {
+      if (job.idempotencyKey === idempotencyKey) {
+        return job;
+      }
+    }
+    return null;
+  }
+
+  async listScheduled(jobType, limit = 50) {
+    let list = Array.from(this.jobs.values()).filter(
+      (job) => job.status === 'scheduled' && new Date(job.scheduledFor) <= new Date()
+    );
+
+    if (jobType) {
+      list = list.filter((job) => job.jobType === jobType);
+    }
+
+    list.sort((a, b) => a.scheduledFor.localeCompare(b.scheduledFor));
+    return list.slice(0, limit);
+  }
+
+  async create(job) {
+    const existing = await this.findByIdempotencyKey(job.idempotencyKey);
+    if (existing) {
+      throw new DuplicateError('BackgroundJob', 'idempotencyKey', job.idempotencyKey);
+    }
+    this.jobs.set(job.id, job);
+    return job;
+  }
+
+  async update(job) {
+    const existing = this.jobs.get(job.id);
+    if (!existing) {
+      throw new NotFoundError('BackgroundJob', job.id);
+    }
+
+    if (existing.version !== job.version - 1) {
+      throw new VersionConflictError('BackgroundJob', job.version - 1, existing.version);
+    }
+
+    this.jobs.set(job.id, job);
+    return job;
+  }
+
+  async cancel(id) {
+    const job = this.jobs.get(id);
+    if (!job) {
+      throw new NotFoundError('BackgroundJob', id);
+    }
+    job.status = 'cancelled';
+    job.version += 1;
+    job.updatedAt = new Date().toISOString();
+    this.jobs.set(id, job);
+  }
+}
+
+describe('AuditEvent Repository', () => {
+  let repo;
+
+  beforeEach(() => {
+    repo = new InMemoryAuditEventRepository();
+  });
+
+  it('should create audit events in append-only immutable mode', async () => {
+    const event = {
+      ...initMetadata('user-123'),
+      actorId: 'user-123',
+      action: 'medication.update',
+      resourceType: 'Medication',
+      resourceId: 'med-456',
+      purpose: 'Caregiver sync',
+      occurredAt: new Date().toISOString(),
+      correlationId: 'trace-1',
+      beforeSnapshot: { strength: '10mg' },
+      afterSnapshot: { strength: '20mg' },
+    };
+
+    const created = await repo.create(event);
+    assert.ok(created.id);
+    assert.equal(created.action, 'medication.update');
+
+    // Attempt to register duplicate ID should fail
+    await assert.rejects(
+      async () => await repo.create(event),
+      (err) => err.code === 'DUPLICATE'
+    );
+  });
+});
+
+describe('Outbox Repository', () => {
+  let repo;
+
+  beforeEach(() => {
+    repo = new InMemoryOutboxRepository();
+  });
+
+  it('should enforce unique idempotency key across messages', async () => {
+    const msg = {
+      ...initMetadata('system'),
+      messageType: 'notification',
+      payload: { userId: 'user-abc', body: 'Take your pills' },
+      status: 'pending',
+      idempotencyKey: 'key-123',
+      retryCount: 0,
+      maxRetries: 3,
+    };
+
+    await repo.create(msg);
+
+    const duplicateMsg = {
+      ...initMetadata('system'),
+      messageType: 'notification',
+      payload: { userId: 'user-abc', body: 'Take your pills' },
+      status: 'pending',
+      idempotencyKey: 'key-123',
+      retryCount: 0,
+      maxRetries: 3,
+    };
+
+    // Should reject duplicate idempotency key
+    await assert.rejects(
+      async () => await repo.create(duplicateMsg),
+      (err) => err.code === 'DUPLICATE'
+    );
+  });
+
+  it('should handle retries and move to dead-letter storage upon exhaustion', async () => {
+    const msg = {
+      ...initMetadata('system'),
+      messageType: 'report_job',
+      payload: { reportId: 'rpt-123' },
+      status: 'pending',
+      idempotencyKey: 'key-456',
+      retryCount: 0,
+      maxRetries: 3,
+    };
+
+    const created = await repo.create(msg);
+
+    // Simulate failed processing
+    let current = await repo.findById(created.id);
+    current = {
+      ...updateMetadata(current, 'system'),
+      status: 'processing',
+    };
+    await repo.update(current);
+
+    // Update retry increment
+    current = await repo.findById(current.id);
+    current = {
+      ...updateMetadata(current, 'system'),
+      status: 'pending',
+      retryCount: current.retryCount + 1,
+      errorMessage: 'Network connection failed',
+    };
+    current = await repo.update(current);
+
+    assert.equal(current.retryCount, 1);
+    assert.equal(current.status, 'pending');
+
+    // Move to dead letter
+    await repo.moveToDeadLetter(created.id, 'Max attempts exceeded');
+
+    const result = await repo.findById(created.id);
+    assert.equal(result.status, 'dead_letter');
+    assert.equal(result.errorMessage, 'Max attempts exceeded');
+    assert.ok(result.deadLetterAt);
+  });
+});
+
+describe('BackgroundJob Repository', () => {
+  let repo;
+
+  beforeEach(() => {
+    repo = new InMemoryBackgroundJobRepository();
+  });
+
+  it('should list scheduled jobs ready to execute', async () => {
+    const futureJob = {
+      ...initMetadata('system'),
+      jobType: 'cleanup',
+      payload: {},
+      status: 'scheduled',
+      idempotencyKey: 'clean-1',
+      scheduledFor: new Date(Date.now() + 3600000).toISOString(), // 1 hour in future
+      retryCount: 0,
+      maxRetries: 3,
+    };
+
+    const pastJob = {
+      ...initMetadata('system'),
+      jobType: 'reminder_dispatch',
+      payload: {},
+      status: 'scheduled',
+      idempotencyKey: 'remind-1',
+      scheduledFor: new Date(Date.now() - 60000).toISOString(), // 1 minute in past
+      retryCount: 0,
+      maxRetries: 3,
+    };
+
+    await repo.create(futureJob);
+    await repo.create(pastJob);
+
+    const readyJobs = await repo.listScheduled();
+    assert.equal(readyJobs.length, 1);
+    assert.equal(readyJobs[0].idempotencyKey, 'remind-1');
+  });
+
+  it('should support job cancellation', async () => {
+    const job = {
+      ...initMetadata('system'),
+      jobType: 'data_export',
+      payload: {},
+      status: 'scheduled',
+      idempotencyKey: 'export-1',
+      scheduledFor: new Date(Date.now() + 60000).toISOString(),
+      retryCount: 0,
+      maxRetries: 3,
+    };
+
+    const created = await repo.create(job);
+    await repo.cancel(created.id);
+
+    const cancelledJob = await repo.findById(created.id);
+    assert.equal(cancelledJob.status, 'cancelled');
+
+    // Cancelled jobs should not show up in scheduled query
+    const ready = await repo.listScheduled();
+    assert.equal(ready.length, 0);
+  });
+});
+
     assert.equal(history[1].status, 'resolved');
   });
 });
