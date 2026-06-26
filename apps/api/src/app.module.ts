@@ -19,6 +19,7 @@ import { SttModule } from "./stt/stt.module.js";
 import { ReportModule } from "./report/report.module.js";
 import { TravelModule } from "./travel/travel.module.js";
 import { SosModule } from "./sos/sos.module.js";
+import { AdminModule } from "./admin/admin.module.js";
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { SosModule } from "./sos/sos.module.js";
     ReportModule,
     TravelModule,
     SosModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
