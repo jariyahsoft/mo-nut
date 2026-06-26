@@ -1,3 +1,16 @@
+# 2026-06-26T00:35:15Z
+
+- Task: 13 - Media, Checklist, Report, and SOS Repositories
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Extended domain package with media processing, checklists, reports, share links, and emergency (SOS) tracking; implemented DocumentAsset entity storing object keys (never signed URLs) with checksum validation; implemented ProcessingJob with state machine validation for OCR/STT/AI extract workflows (uploaded->queued->processing->review_required->confirmed->applied with invalid transition rejection); implemented ExtractedDraft for AI-extracted data with confidence scores and review status; implemented AudioRecord and Transcript entities with consent tracking and timestamped segments; implemented Checklist and ChecklistOccurrence with flexible source types (appointment/medication/manual/template); implemented DoctorQuestion with priority levels and answer tracking; implemented ReportJob for async report generation; implemented ShareLink with token hash storage (plaintext never persisted), expiry validation, revocation, and max use enforcement; implemented ShareLinkAccess for audit trail; implemented EmergencyEvent (SOS) with append-oriented history preserving partial delivery failures in notifiedContacts/failedContacts arrays; implemented PatientEmergencyContact entity (renamed to avoid name clash with patient.ts embedded contact); all repositories support state validation, version conflicts, soft-delete where applicable.
+- Changed files: `packages/domain/src/media.ts`, `packages/domain/src/activity.ts`, `packages/domain/src/index.ts`, `packages/domain/test/repositories.test.mjs`
+- Verification: `npx --yes pnpm@11.9.0 lint`, `npx --yes pnpm@11.9.0 typecheck`, `npx --yes pnpm@11.9.0 build`, and `npx --yes pnpm@11.9.0 test` all passed after confirming 36 domain repository tests including processing job state transition validation (invalid transitions rejected with error message), share link expiry/revocation/max-use enforcement (expired and revoked links return null, max uses prevents further access), SOS partial failure tracking (notifiedContacts and failedContacts preserved through status updates), and append-oriented SOS history (events sorted by initiatedAt descending).
+- Self-review: Processing jobs validate state transitions through allowed transition map preventing invalid flows, share links validate expiry timestamp and status before incrementing use count, max use limit enforced by comparing useCount against maxUses before allowing access, SOS events use separate arrays for successful and failed contact notifications enabling audit of partial delivery failures, share token hash stored instead of plaintext for security, AI job retries tracked with retryCount and nextRetryAt for backoff scheduling, and all media references use object keys not signed URLs to avoid durable URL exposure.
+- Telegram: sent
+- Remaining risks/blockers: Task 14 requires audit event repository (append-only, immutable), outbox pattern for reliable side effects, and background job workers with idempotency and retry logic.
+
 # 2026-06-25T23:45:21Z
 
 - Task: 12 - Medication, Dose Event, and Health Measurement Repositories
