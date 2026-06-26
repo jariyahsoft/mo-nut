@@ -377,3 +377,15 @@
 - Verification: Build clean and 79 API tests pass.
 - Telegram: sent
 - Remaining risks/blockers: Task 33 requires quick capture and health measurement module.
+
+# 2026-06-26T04:35:00Z
+
+- Task: 33 - Quick Capture and Health Measurements
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented backend Quick Capture and Health Measurement API with validation, BMI computation, soft-delete, and version-controlled updates.
+- Changed files: `apps/api/src/app.module.ts`, `apps/api/src/measurement/*`, `apps/api/test/measurement.test.mjs`
+- Verification: Build clean and 87 API tests pass.
+- Telegram: sent
+- Remaining risks/blockers: Task 34 requires checklist and doctor question module.
