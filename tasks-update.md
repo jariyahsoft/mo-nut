@@ -437,3 +437,15 @@
 - Verification: Build clean and 116 API tests pass.
 - Telegram: sent
 - Remaining risks/blockers: Task 38 requires PDF reports and secure share links.
+
+# 2026-06-26T05:32:00Z
+
+- Task: 38 - PDF Reports and Secure Sharing
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented backend PDF report generation and secure share links. ReportService supports async generation, retries, high-entropy share tokens (32-byte), SHA-256 hash storage (plaintext returned once), privacy-safe rejection of expired/revoked/max-uses links, and access audit trail (IP + user-agent).
+- Changed files: `apps/api/src/app.module.ts`, `apps/api/src/report/*`, `apps/api/test/report.test.mjs`
+- Verification: Build clean and 124 API tests pass.
+- Telegram: sent
+- Remaining risks/blockers: Task 39 requires Travel Plan and Emergency Profile.
