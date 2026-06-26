@@ -1,3 +1,16 @@
+# 2026-06-26T01:38:30Z
+
+- Task: 18 - Browser Capability Adapters and Resumable Uploads
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented browser capability detection with feature-aware adapters and fallback paths for camera (native getUserMedia → file input), MediaRecorder → file upload guidance, geolocation (with normalized PERMISSION_DENIED/POSITION_UNAVAILABLE/TIMEOUT errors), Web Share → clipboard copy, Background Sync (SyncManager registration), and Storage Quota (estimate with 80% low-quota warning). Created domain-level UploadEngine for resumable/retryable file uploads with configurable chunk size (default 256 KiB), per-chunk SHA-256 checksums, full-file checksum handshake on finalize, checkpoint-based resume (skips already-uploaded chunks on interruption), auto-finalization after last chunk, cancel/abort with server cleanup, and strict cleanup policy (only completed/cancelled manifests are removed — unsynced uploading media is never silently deleted). UploadStore and UploadTransport interfaces enable pluggable server backends and in-memory test doubles.
+- Changed files: `apps/web/src/lib/capabilities/browser-capabilities.ts`, `packages/domain/src/upload.ts`, `packages/domain/src/index.ts`, `packages/domain/test/upload.test.mjs`, `packages/domain/test/capabilities.test.mjs`
+- Verification: `npx --yes pnpm@11.9.0 lint`, `npx --yes pnpm@11.9.0 typecheck`, `npx --yes pnpm@11.9.0 build`, and `npx --yes pnpm@11.9.0 test` all passed after confirming 78 domain tests across all modules including upload engine multi-chunk start/complete, interrupted resume without duplicate chunks, cancellation with server abort and local cleanup, unsynced upload retention after cleanupCompleted, checksum mismatch detection, capabilities feature detection for geolocation errors and quota thresholds.
+- Self-review: Each browser adapter provides a consistent interface regardless of native API availability; fallback mechanisms ensure no capability gap leaves the user at a dead end. Upload engine's auto-finalize after the last chunk reduces roundtrips. CleanupCompleted() only removes completed or cancelled manifests — uploading manifests survive cleanup to prevent silent data loss. Chunk-level checksums plus full-file checksum handshake provide end-to-end integrity. The UploadTransport interface is designed for easy integration with server endpoints.
+- Telegram: sent
+- Remaining risks/blockers: Task 19 requires Design System implementation with responsive PWA shell, component library, and elderly usability patterns.
+
 # 2026-06-26T01:25:30Z
 
 - Task: 17 - PWA Manifest, Service Worker, and Update Flow
