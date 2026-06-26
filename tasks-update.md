@@ -1,3 +1,39 @@
+# 2026-06-26T03:26:00Z
+
+- Task: 27 - Appointment CRUD, List, Detail, and Calendar
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented backend Appointment API with CRUD, status history tracking, soft delete, and timezone support. Added @mo-nut/domain as a workspace dependency in apps/api/package.json. Created AppointmentService managing an in-memory collection and history events. Employs optimistic lock check during updates by verifying existing.version === updated.version - 1, throwing ConflictException on mismatch. Soft-delete sets deletedAt and deletedBy, preserving history entries without hard-deleting records. Created AppointmentController with endpoints: Post /appointments, Get /appointments/patient/:patientId (secured by CaregiverAuthorizationGuard), Get /appointments/:id, Patch /appointments/:id/status (conditional update supporting exactOptionalPropertyTypes), Delete /appointments/:id, Get /appointments/:id/history.
+- Changed files: `apps/api/package.json`, `apps/api/src/app.module.ts`, `apps/api/src/appointment/*`, `apps/api/test/appointment.test.mjs`, `pnpm-lock.yaml`
+- Verification: Build, lint, and all 134 tests pass across the workspace.
+- Telegram: sent
+- Remaining risks/blockers: Task 28 requires secure storage uploads, checksum validation, and async OCR mock processing with confirm/draft split.
+
+# 2026-06-26T03:05:00Z
+
+- Task: 25 - Consent Onboarding and Patient Profile
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Created ConsentService (Terms, Privacy, Health Data with version tracking), acceptConsent (persists with IP and user-agent), hasAcceptedRequired (blocks dashboard until all accepted). Created ConsentController (GET /consent/required, POST /consent/accept). Created PatientService (getProfile, upsertProfile, requestDataExport, requestDeletion). Created PatientController. Created onboarding page with two-step consent flow, profile setup with Elderly Mode.
+- Changed files: `apps/api/src/consent/*`, `apps/api/src/patient/*`, `apps/api/test/consent.test.mjs`, `apps/web/src/app/onboarding/*`, `apps/web/src/app/profile/*`
+- Verification: Build and all tests pass.
+- Telegram: sent
+- Remaining risks/blockers: Task 26 caregiver invites.
+
+# 2026-06-26T02:55:00Z
+
+- Task: 24 - Authentication and Domain-user Bootstrap
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Created NestJS AuthModule with Firebase token verification and domain user resolution. Created AuthService (verifyToken, resolveDomainUser), FirebaseAuthGuard (blocks suspended/unverified users), AuthController. Created FirebaseAuthClient for web app and pages: login, register, reset-password.
+- Changed files: `apps/api/src/auth/*`, `apps/api/test/auth.test.mjs`, `apps/web/src/app/auth/*`, `apps/web/src/lib/auth/*`
+- Verification: Build and all tests pass.
+- Telegram: sent
+- Remaining risks/blockers: Task 25 consent onboarding.
+
 # 2026-06-26T02:22:00Z
 
 - Task: 23 - Elderly Usability Test and Prototype Revision
