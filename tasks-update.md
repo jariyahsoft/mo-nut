@@ -461,3 +461,15 @@
 - Verification: Build clean and 132 API tests pass.
 - Telegram: sent
 - Remaining risks/blockers: Task 40 requires SOS and Caregiver Alert.
+
+# 2026-06-26T05:52:00Z
+
+- Task: 40 - SOS and Caregiver Alert
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented backend SOS Emergency Event API with partial-failure visibility, duplicate prevention, audit trail, and direct call availability. SosService manages state machine initiated->dispatched->responded->resolved/cancelled. Failed and successful contact notifications tracked separately. Disclaimer always returned. Location retained only when explicitly provided.
+- Changed files: `apps/api/src/app.module.ts`, `apps/api/src/sos/*`, `apps/api/test/sos.test.mjs`
+- Verification: Build clean and 139 API tests pass.
+- Telegram: sent
+- Remaining risks/blockers: Tasks 36-40 complete. Next phase is P6 (41+).
