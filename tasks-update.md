@@ -473,3 +473,15 @@
 - Verification: Build clean and 139 API tests pass.
 - Telegram: sent
 - Remaining risks/blockers: Tasks 36-40 complete. Next phase is P6 (41+).
+
+# 2026-06-26T06:05:00Z
+
+- Task: 41 - Admin, Support, and Auditor Operations
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented backend Admin/Support/Auditor role separation with default no-PHI views, MFA-enforced admin roles, break-glass workflow with reason requirement and time-limit expiry, and full audit trail for every privileged action.
+- Changed files: `apps/api/src/app.module.ts`, `apps/api/src/admin/*`, `apps/api/test/admin.test.mjs`
+- Verification: Build clean and 148 API tests pass.
+- Telegram: sent
+- Remaining risks/blockers: Task 42 requires Accessibility, Browser, and Security Hardening.
