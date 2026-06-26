@@ -365,3 +365,15 @@
 - Verification: Build clean and 73 API tests pass.
 - Telegram: sent
 - Remaining risks/blockers: Task 32 requires medication notifications with grace periods and caregiver escalation.
+
+# 2026-06-26T04:25:00Z
+
+- Task: 32 - Medication Notifications and Caregiver Escalation
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented backend medication notification scheduler with permission-aware caregiver escalation. Created MedicationNotificationService implementing scheduleMedNotification (idempotent per occurrenceId - one logical notification per dose slot), cancelFutureForMedication (cancels pending notifications when medication is paused/stopped), and runEscalationCheck (only triggers escalation for caregivers with medication.read or wildcard scope). In-app fallback routes notifications through in_app channel only when web_push is unsupported. Grace period defaults to 15 minutes and is configurable.
+- Changed files: `apps/api/src/app.module.ts`, `apps/api/src/medication-notification/*`, `apps/api/test/medication-notification.test.mjs`
+- Verification: Build clean and 79 API tests pass.
+- Telegram: sent
+- Remaining risks/blockers: Task 33 requires quick capture and health measurement module.
