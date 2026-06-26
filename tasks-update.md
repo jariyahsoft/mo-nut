@@ -401,3 +401,15 @@
 - Verification: Build clean and 94 API tests pass.
 - Telegram: sent
 - Remaining risks/blockers: Task 35 requires Today dashboard aggregation.
+
+# 2026-06-26T04:55:00Z
+
+- Task: 35 - Today Dashboard Aggregation
+- Attempt: 1
+- Status: completed
+- Recommended model: GPT 5.4 high
+- Summary: Implemented backend Today Dashboard Aggregation API. TodayService.aggregate returns bounded dashboard data: next appointment (limit 5), due medications (limit 10), active checklist, recent measurement (limit 1, latest only), caregiver alerts, sync state, and quick capture enabled flag. Sanitizes PHI from response (no diagnostic notes leaked). Permission-aware via CaregiverAuthorizationGuard on patient-specific endpoints.
+- Changed files: `apps/api/src/app.module.ts`, `apps/api/src/today/*`, `apps/api/test/today.test.mjs`
+- Verification: Build clean and 102 API tests pass.
+- Telegram: sent
+- Remaining risks/blockers: Tasks 31-35 complete.
